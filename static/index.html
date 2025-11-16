@@ -362,8 +362,79 @@ dialog.dlg-cycle .dlg-form table td,
 dialog.dlg-cycle .dlg-form table th {
   padding: 2px 4px;
 }
+/* ===== Окно выбора типа траектории пошире ===== */
+dialog.dlg-trajectory .dlg {
+  width: 500px;
+  max-width: 500px;
+}
+/* ===== Расширенное окно Параметров окружности (шире ×1.5) ===== */
+dialog.dlg-circle-wide .dlg {
+  width: 750px;
+  max-width: 750px;
+}
 
+/* Вместо grid используем flex, чтобы клетки не растягивались */
+dialog.dlg-circle-wide .dlg-form-row {
+  display: flex !important;
+  justify-content: flex-start;
+  gap: 16px;              /* расстояние между клетками */
+  flex-wrap: nowrap;      /* все четыре в один ряд */
+}
 
+/* Каждая белая "клетка" фиксированной узкой ширины */
+dialog.dlg-circle-wide .dlg-form-row > div {
+  background: #ffffff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  flex: 0 0 140px;        /* фиксированная ширина клетки */
+  box-sizing: border-box;
+}
+
+/* Поле ввода остаётся компактным */
+dialog.dlg-circle-wide .dlg-form-row input {
+  width: 80px !important; /* можно чуть больше/меньше, если нужно */
+  flex: none !important;
+}
+
+/* ===== Окно "Настройки графика" ===== */
+dialog.dlg-graph .dlg {
+  width: 520px;
+  max-width: 520px;
+}
+
+.group-box {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px 10px 10px;
+  margin-bottom: 10px;
+  background: #f5f5f5;
+}
+
+.group-box legend {
+  font-weight: bold;
+  padding: 0 4px;
+}
+
+.graph-section {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.graph-radio {
+  display: block;
+  font-size: 14px;
+  margin: 2px 0;
+}
+
+.graph-radio input {
+  margin-right: 6px;
+}
+
+.graph-subtitle {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: bold;
+}
 
 </style>
 
@@ -1154,6 +1225,223 @@ dialog.dlg-cycle .dlg-form table th {
     </div>
   </dialog>
 
+    <!-- ===== Выбор типа траектории ===== -->
+  <dialog id="trajectoryTypeDialog" class="dlg-trajectory">
+    <div class="dlg">
+      <div class="dlg-header">
+        Выбор типа траектории
+      </div>
+
+      <div class="dlg-form">
+        <div style="font-size: 25px; font-weight: bold; margin-bottom: 10px;">
+          Тип траектории
+        </div>
+
+        <div style="display: flex; gap: 24px; align-items: center;">
+          <label style="font-size: 25px;">
+            <input type="radio" name="trajectoryType" value="line" id="traj_line">
+            Прямая
+          </label>
+          <label style="font-size: 25px;">
+            <input type="radio" name="trajectoryType" value="circle" id="traj_circle">
+            Окружность
+          </label>
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="trajectoryOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="trajectoryHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="trajectoryCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+    <!-- ===== Параметры прямой ===== -->
+  <dialog id="lineParamsDialog">
+    <div class="dlg">
+      <div class="dlg-header">
+        Параметры прямой
+      </div>
+
+      <div class="dlg-form">
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">
+          Параметры прямой
+        </div>
+
+        <div class="dlg-form-row" style="display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px;">
+          <div>
+            <label for="line_x1">x1</label><br>
+            <input id="line_x1" type="number" step="0.001">
+          </div>
+          <div>
+            <label for="line_y1">y1</label><br>
+            <input id="line_y1" type="number" step="0.001">
+          </div>
+
+          <div>
+            <label for="line_x2">x2</label><br>
+            <input id="line_x2" type="number" step="0.001">
+          </div>
+          <div>
+            <label for="line_y2">y2</label><br>
+            <input id="line_y2" type="number" step="0.001">
+          </div>
+
+          <div style="grid-column: 1 / span 2;">
+            <label for="line_speed">Скорость</label><br>
+            <input id="line_speed" type="number" step="0.001">
+          </div>
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="lineOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="lineShowBtn" style="background: yellow;">
+            Показать
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+    <!-- ===== Параметры окружности ===== -->
+  <dialog id="circleParamsDialog" class="dlg-circle-wide">
+    <div class="dlg">
+      <div class="dlg-header">
+        Параметры окружности
+      </div>
+
+      <div class="dlg-form">
+        <div style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">
+          Параметры окружности
+        </div>
+
+        <div class="dlg-form-row" style="display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:10px;">
+          <div>
+            <label for="circle_x">x</label><br>
+            <input id="circle_x" type="number" step="0.001">
+          </div>
+          <div>
+            <label for="circle_y">y</label><br>
+            <input id="circle_y" type="number" step="0.001">
+          </div>
+          <div>
+            <label for="circle_radius">Радиус</label><br>
+            <input id="circle_radius" type="number" step="0.001">
+          </div>
+          <div>
+            <label for="circle_speed">Скорость</label><br>
+            <input id="circle_speed" type="number" step="0.001">
+          </div>
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="circleOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="circleShowBtn" style="background: yellow;">
+            Показать
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+    <!-- ===== Настройки графика ===== -->
+  <dialog id="graphSettingsDialog" class="dlg-graph">
+    <div class="dlg">
+      <div class="dlg-header">
+        Настройки графика
+      </div>
+
+      <div class="dlg-form">
+        <!-- Тип координат -->
+        <fieldset class="group-box">
+          <legend>Тип координат</legend>
+
+          <!-- Основные -->
+          <div class="graph-section">
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="general" id="graph_general">
+              Обобщённые от времени
+            </label>
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="plane" id="graph_plane">
+              Декартовы на плоскости
+            </label>
+          </div>
+
+          <!-- Дополнительные -->
+          <div class="graph-subtitle">Дополнительные</div>
+          <div class="graph-section">
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="time" id="graph_time">
+              Декартовы от времени
+            </label>
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="speed" id="graph_speed">
+              Обобщённые скорости
+            </label>
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="accel" id="graph_accel">
+              Обобщённые ускорения
+            </label>
+          </div>
+
+          <!-- Внутренние -->
+          <div class="graph-subtitle">Внутренние</div>
+          <div class="graph-section">
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="voltage" id="graph_voltage">
+              Напряжение
+            </label>
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="voltage_star" id="graph_voltage_star">
+              Напряжение* (Напряжение - ЭДС)
+            </label>
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="current" id="graph_current">
+              Ток
+            </label>
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="motor_moment" id="graph_motor_moment">
+              Момент электродвижущий
+            </label>
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="load_moment" id="graph_load_moment">
+              Момент нагрузки
+            </label>
+            <label class="graph-radio">
+              <input type="radio" name="graphCoordType" value="moment_star" id="graph_moment_star">
+              Момент* (МЭ - М нагрузки)
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Сплайн -->
+        <fieldset class="group-box">
+          <legend>Отображение сплайна</legend>
+          <label class="graph-radio">
+            <input type="checkbox" id="graph_spline">
+            Показать сплайн
+          </label>
+        </fieldset>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="graphOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="graphHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="graphCancelBtn">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
 
 <script>
   // ===== Глобальное состояние =====
@@ -1265,6 +1553,29 @@ dialog.dlg-cycle .dlg-form table th {
       q3: Array(9).fill(null),
       q4: Array(9).fill(null),
     },
+        // Контурное движение: тип траектории + параметры
+    trajectory: {
+      type: "line",  // "line" или "circle"
+      line: {        // x1, x2, y1, y2, speed
+        x1: null,
+        x2: null,
+        y1: null,
+        y2: null,
+        speed: null,
+      },
+      circle: {      // x, y, radius, speed
+        x: null,
+        y: null,
+        radius: null,
+        speed: null,
+      },
+    },
+      // Настройки графика
+    graphSettings: {
+      coordType: "general",  // general, plane, time, speed, accel, voltage, voltage_star, current, motor_moment, load_moment, moment_star
+      showSpline: false,
+    },
+
   };
 
   // ===== Время =====
@@ -2132,6 +2443,208 @@ dialog.dlg-cycle .dlg-form table th {
   });
 
 
+    // ===== Выбор типа траектории =====
+  const trajDlg         = document.getElementById("trajectoryTypeDialog");
+  const trajOkBtn       = document.getElementById("trajectoryOkBtn");
+  const trajHelpBtn     = document.getElementById("trajectoryHelpBtn");
+  const trajCancelBtn   = document.getElementById("trajectoryCancelBtn");
+  const trajLineRadio   = document.getElementById("traj_line");
+  const trajCircleRadio = document.getElementById("traj_circle");
+
+  function openTrajectoryTypeDialog() {
+    // Восстанавливаем ранее выбранный тип
+    if (state.trajectory.type === "circle") {
+      trajCircleRadio.checked = true;
+    } else {
+      trajLineRadio.checked = true;
+    }
+    trajDlg.showModal();
+  }
+
+  trajOkBtn.addEventListener("click", () => {
+    state.trajectory.type = trajCircleRadio.checked ? "circle" : "line";
+
+    // после выбора типа сразу предлагаем ввести параметры
+    trajDlg.close();
+    if (state.trajectory.type === "line") {
+      openLineParamsDialog();
+    } else {
+      openCircleParamsDialog();
+    }
+    updateStatus();
+  });
+
+  trajCancelBtn.addEventListener("click", () => trajDlg.close());
+
+  trajHelpBtn.addEventListener("click", () => {
+    alert("Выберите тип траектории для контурного движения:\n" +
+          "• Прямая\n" +
+          "• Окружность\n\n" +
+          "Аналог show_trajectory_type_dialog в PyQt.");
+  });
+
+  // ===== Параметры прямой =====
+  const lineDlg       = document.getElementById("lineParamsDialog");
+  const lineOkBtn     = document.getElementById("lineOkBtn");
+  const lineShowBtn   = document.getElementById("lineShowBtn");
+
+  const line_x1   = document.getElementById("line_x1");
+  const line_x2   = document.getElementById("line_x2");
+  const line_y1   = document.getElementById("line_y1");
+  const line_y2   = document.getElementById("line_y2");
+  const line_speed= document.getElementById("line_speed");
+
+  function openLineParamsDialog() {
+    const p = state.trajectory.line;
+    line_x1.value    = p.x1    ?? "";
+    line_x2.value    = p.x2    ?? "";
+    line_y1.value    = p.y1    ?? "";
+    line_y2.value    = p.y2    ?? "";
+    line_speed.value = p.speed ?? "";
+    lineDlg.showModal();
+  }
+
+  lineOkBtn.addEventListener("click", () => {
+    const x1    = parseField(line_x1);
+    const x2    = parseField(line_x2);
+    const y1    = parseField(line_y1);
+    const y2    = parseField(line_y2);
+    const speed = parseField(line_speed);
+
+    if ([x1,x2,y1,y2,speed].some(v => v === null)) {
+      alert("Некорректные параметры прямой. Проверьте значения.");
+      return;
+    }
+
+    state.trajectory.line = { x1,x2,y1,y2,speed };
+    lineDlg.close();
+    updateStatus();
+  });
+
+  lineShowBtn.addEventListener("click", () => {
+    const p = state.trajectory.line;
+    alert("Параметры прямой:\n" +
+          "x1 = " + (p.x1 ?? line_x1.value) + "\n" +
+          "x2 = " + (p.x2 ?? line_x2.value) + "\n" +
+          "y1 = " + (p.y1 ?? line_y1.value) + "\n" +
+          "y2 = " + (p.y2 ?? line_y2.value) + "\n" +
+          "Скорость = " + (p.speed ?? line_speed.value));
+  });
+
+  // ===== Параметры окружности =====
+  const circleDlg       = document.getElementById("circleParamsDialog");
+  const circleOkBtn     = document.getElementById("circleOkBtn");
+  const circleShowBtn   = document.getElementById("circleShowBtn");
+
+  const circle_x      = document.getElementById("circle_x");
+  const circle_y      = document.getElementById("circle_y");
+  const circle_radius = document.getElementById("circle_radius");
+  const circle_speed  = document.getElementById("circle_speed");
+
+  function openCircleParamsDialog() {
+    const p = state.trajectory.circle;
+    circle_x.value      = p.x      ?? "";
+    circle_y.value      = p.y      ?? "";
+    circle_radius.value = p.radius ?? "";
+    circle_speed.value  = p.speed  ?? "";
+    circleDlg.showModal();
+  }
+
+  circleOkBtn.addEventListener("click", () => {
+    const x      = parseField(circle_x);
+    const y      = parseField(circle_y);
+    const radius = parseField(circle_radius);
+    const speed  = parseField(circle_speed);
+
+    if ([x,y,radius,speed].some(v => v === null)) {
+      alert("Некорректные параметры окружности. Проверьте значения.");
+      return;
+    }
+
+    state.trajectory.circle = { x,y,radius,speed };
+    circleDlg.close();
+    updateStatus();
+  });
+
+  circleShowBtn.addEventListener("click", () => {
+    const p = state.trajectory.circle;
+    alert("Параметры окружности:\n" +
+          "x = " + (p.x ?? circle_x.value) + "\n" +
+          "y = " + (p.y ?? circle_y.value) + "\n" +
+          "Радиус = " + (p.radius ?? circle_radius.value) + "\n" +
+          "Скорость = " + (p.speed ?? circle_speed.value));
+  });
+
+    // ===== Настройки графика =====
+  const graphDlg        = document.getElementById("graphSettingsDialog");
+  const graphOkBtn      = document.getElementById("graphOkBtn");
+  const graphHelpBtn    = document.getElementById("graphHelpBtn");
+  const graphCancelBtn  = document.getElementById("graphCancelBtn");
+  const graphSplineChk  = document.getElementById("graph_spline");
+
+  const graphRadios = {
+    general:       document.getElementById("graph_general"),
+    plane:         document.getElementById("graph_plane"),
+    time:          document.getElementById("graph_time"),
+    speed:         document.getElementById("graph_speed"),
+    accel:         document.getElementById("graph_accel"),
+    voltage:       document.getElementById("graph_voltage"),
+    voltage_star:  document.getElementById("graph_voltage_star"),
+    current:       document.getElementById("graph_current"),
+    motor_moment:  document.getElementById("graph_motor_moment"),
+    load_moment:   document.getElementById("graph_load_moment"),
+    moment_star:   document.getElementById("graph_moment_star"),
+  };
+
+  function openGraphSettingsDialog() {
+    const s = state.graphSettings;
+
+    // выставляем ранее выбранный тип
+    let found = false;
+    for (const [key, rb] of Object.entries(graphRadios)) {
+      rb.checked = (s.coordType === key);
+      if (rb.checked) found = true;
+    }
+    if (!found) {
+      graphRadios.general.checked = true;
+    }
+
+    graphSplineChk.checked = !!s.showSpline;
+
+    graphDlg.showModal();
+  }
+
+  graphOkBtn.addEventListener("click", () => {
+    // читаем выбранный тип
+    let selected = "general";
+    for (const [key, rb] of Object.entries(graphRadios)) {
+      if (rb.checked) {
+        selected = key;
+        break;
+      }
+    }
+    state.graphSettings.coordType = selected;
+    state.graphSettings.showSpline = graphSplineChk.checked;
+
+    graphDlg.close();
+    updateStatus();
+  });
+
+  graphCancelBtn.addEventListener("click", () => graphDlg.close());
+
+  graphHelpBtn.addEventListener("click", () => {
+    alert(
+      "Настройки графика:\n" +
+      "• Основные: обобщённые координаты от времени, декартовы на плоскости\n" +
+      "• Дополнительные: декартовы от времени, обобщённые скорости/ускорения\n" +
+      "• Внутренние: напряжение, ток, моменты и их разности\n\n" +
+      "Чекбокс 'Показать сплайн' включает отображение сплайна.\n" +
+      "Это веб-аналог show_graph_settings_dialog из PyQt."
+    );
+  });
+
+
+
   // ===== Обновление статусбара =====
   function updateStatus() {
     let extra = "";
@@ -2157,12 +2670,15 @@ dialog.dlg-cycle .dlg-form table th {
       : "Колер: параметры не заданы";
   }
 
-const mp = state.motorParams;
+    const mp = state.motorParams;
     const motorsOk = mp.J[0] != null;
     const motorsInfo = motorsOk ? ` | Двигатели: J1=${mp.J[0]}, J2=${mp.J[1]}` : "";
+    const traj = state.trajectory;
+    const trajLabel = (traj.type === "circle") ? "Окружность" : "Прямая";
 
     document.getElementById("statusRight").textContent =
       `Тип робота: ${robotTypeLabel()} | Тип движения: ${movementTypeLabel()} | ${extra}`;
+      `Траектория: ${trajLabel} | ${extra}`;
   }
   updateStatus();
 
@@ -2201,9 +2717,9 @@ const mp = state.motorParams;
 
     show_cyclegram_dialog() { openCyclegramDialog(); },
 
-    show_trajectory_type_dialog(){ alert("Контурное движение (тип траектории)."); },
+    show_trajectory_type_dialog(){ openTrajectoryTypeDialog(); },
 
-    show_graph_settings_dialog() { alert("Настройки графика/расчёт графика."); },
+    show_graph_settings_dialog() { openGraphSettingsDialog(); },
     draw_workspace()             { alert("Расчёт и отрисовка рабочей области."); },
   };
 
@@ -2216,9 +2732,6 @@ const mp = state.motorParams;
     }
   });
 </script>
-
-
-
 
 </body>
 </html>
