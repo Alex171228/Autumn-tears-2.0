@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8" />
+<title>PyQt → Web интерфейс</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+  body {
+    font-family: Arial, system-ui, sans-serif;
+    background-color: #6bdba0; /* зелёный фон как в PyQt */
+  }
+
+  /* ===== Верхнее меню с выпадающими пунктами (QMenuBar/QMenu) ===== */
+  #menuBar {
+    background-color: #287571;
+    border-bottom: 2px solid blue;
+    display: flex;
+    align-items: stretch;
+    padding: 0;
+    height: 26px;
+    box-sizing: border-box;
+  }
+
+  .menu-root {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .menu-button,
+  .menu-label {
+    background-color: #3ab0aa;
+    color: black;
+    border: 1px solid blue;
+    border-top: none;
+    border-bottom: none;
+    padding: 2px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .menu-button:first-child,
+  .menu-label:first-child {
+    border-left-width: 0;
+  }
+
+  .menu-button:hover,
+  .menu-label:hover {
+    background-color: #87CEFA;
+  }
+
+  .menu-spacer {
+    flex: 1;
+  }
+
+  .menu-item {
+    position: relative;
+  }
+
+  .menu-item > .menu-label::after {
+    content: " ▾";
+    font-size: 11px;
+    margin-left: 4px;
+  }
+
+  .submenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #f8f9fa;
+    border: 1px solid #1f2937;
+    min-width: 200px;
+    z-index: 100;
+    display: none;
+  }
+
+  .submenu button,
+  .submenu .submenu-label {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 4px 10px;
+    border: none;
+    background: #f8f9fa;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .submenu button:hover,
+  .submenu .submenu-label:hover {
+    background: #e5e7eb;
+  }
+
+  /* вложенное подменю (для Робота, Движения и т.п.) */
+  .submenu-item {
+    position: relative;
+  }
+  .submenu-item > .submenu-label::after {
+    content: " ▸";
+    float: right;
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .submenu-level2 {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    background: #f8f9fa;
+    border: 1px solid #1f2937;
+    min-width: 220px;
+    display: none;
+    z-index: 110;
+  }
+
+  .submenu-item:hover > .submenu-level2 {
+    display: block;
+  }
+
+  .menu-item:hover > .submenu {
+    display: block;
+  }
+
+  /* ===== Макет основного окна ===== */
+  #mainWrapper {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    height: calc(100% - 26px);
+  }
+  #centralArea {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    height: 100%;
+  }
+  #leftDock {
+    position: relative;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  #centerContent {
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Виджет времени */
+  #datetimeWidget {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+  }
+  #datetimeLabel {
+    background-color: #3b84e3;
+    border: 3px solid white;
+    border-radius: 10px;
+    padding: 10px 20px;
+    color: black;
+    font-size: 24px;
+    line-height: 1.2;
+    white-space: pre-line;
+    text-align: center;
+    min-width: 140px;
+    box-sizing: border-box;
+  }
+
+  /* Виджет погоды */
+  #weatherWidget {
+    position: absolute;
+    top: 140px;
+    left: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  #weatherInfo {
+    background-color: #ffffff;
+    border: 3px solid blue;
+    border-radius: 15px;
+    padding: 10px;
+    font-size: 14px;
+    line-height: 1.3;
+    min-width: 170px;
+    box-sizing: border-box;
+  }
+  #weatherIconBox {
+    background-color: #ffffff;
+    border: 3px solid blue;
+    border-radius: 15px;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  #weatherIconBox img {
+    max-width: 60px;
+    max-height: 60px;
+  }
+
+  /* Центральные вкладки (QTabWidget) */
+  #tabs {
+    display: flex;
+    gap: 6px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .tab {
+    padding: 6px 10px;
+    border: 1px solid #e5e7eb;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    background: #f8fafc;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .tab[aria-selected="true"] {
+    background: #ffffff;
+    font-weight: 600;
+  }
+  #tabContent > section {
+    display: none;
+    padding: 10px;
+  }
+  #tabContent > section[data-active="true"] {
+    display: block;
+  }
+
+  /* Статусбар */
+  #statusBar {
+    border-top: 1px solid #e5e7eb;
+    background: #f3f4f6;
+    padding: 4px 10px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+  }
+
+ /* ===== Модальные окна (как QDialog) ===== */
+  dialog {
+    border: 1px solid #999;
+    border-radius: 4px;
+    padding: 0;
+    font-family: inherit;
+  }
+  .dlg {
+    width: 260px;
+    background: #f5f5f5;
+  }
+  .dlg-header {
+    font-size: 18px;
+    font-weight: 700;
+    padding: 8px 12px 4px;
+  }
+  .dlg-group {
+    margin: 0 10px 10px;
+    padding: 10px;
+    background: #ffffff;
+    border: 1px solid #d4d4d4;
+  }
+  .dlg-group legend {
+    font-weight: 600;
+    padding: 0 4px;
+  }
+  .dlg-radio {
+    margin: 4px 0;
+    font-size: 14px;
+  }
+  .dlg-footer {
+    padding: 0 10px 10px;
+  }
+  .dlg-btn {
+    width: 100%;
+    padding: 6px 0;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .dlg-btn-help {
+    background: #7fb9ff;
+  }
+  .dlg-btn-ok {
+    background: #00ff00;
+  }
+</style>
+
+<body>
+
+  <!-- ===== Меню как в PyQt (с именами и иерархией из create_menu_bar) ===== -->
+  <div id="menuBar">
+    <!-- Бургер-кнопка "≡" -->
+    <div class="menu-root">
+      <button class="menu-button" data-action="show_creators_info">≡</button>
+    </div>
+
+    <!-- Кнопка "Проверить обновления" -->
+    <div class="menu-root">
+      <button class="menu-button" data-action="check_for_update">Проверить обновления</button>
+    </div>
+
+    <!-- Меню "Данные" -->
+    <div class="menu-root menu-item">
+      <div class="menu-label"> Данные </div>
+      <div class="submenu">
+        <button data-action="load_data">Загрузить данные</button>
+        <button data-action="save_data">Сохранить</button>
+        <button data-action="save_data_as">Сохранить как</button>
+      </div>
+    </div>
+
+    <!-- Меню "Режим работы" -->
+    <div class="menu-root menu-item">
+      <div class="menu-label"> Режим работы </div>
+      <div class="submenu">
+        <button data-action="show_robot_type_dialog">Тип робота</button>
+        <button data-action="show_movement_type_dialog">Тип движения</button>
+      </div>
+    </div>
+
+    <!-- Меню "Параметры" -->
+    <div class="menu-root menu-item">
+      <div class="menu-label"> Параметры </div>
+      <div class="submenu">
+        <!-- Робот -->
+        <div class="submenu-item">
+          <div class="submenu-label">Робот</div>
+          <div class="submenu-level2">
+            <!-- Декартовый -->
+            <div class="submenu-item">
+              <div class="submenu-label">Декартовый</div>
+              <div class="submenu-level2">
+                <button data-action="show_cartesian_params_dialog">Конструктивные параметры</button>
+                <button data-action="show_cartesian_limits_dialog">Ограничения по координатам</button>
+              </div>
+            </div>
+            <!-- Цилиндрический -->
+            <div class="submenu-item">
+              <div class="submenu-label">Цилиндрический</div>
+              <div class="submenu-level2">
+                <button data-action="show_cylindrical_params_dialog">Конструктивные параметры</button>
+                <button data-action="show_cylindrical_limits_dialog">Ограничения по координатам</button>
+              </div>
+            </div>
+            <!-- Скара -->
+            <div class="submenu-item">
+              <div class="submenu-label">Скара</div>
+              <div class="submenu-level2">
+                <button data-action="show_scara_params_dialog">Конструктивные параметры</button>
+                <button data-action="show_scara_limits_dialog">Ограничения по координатам</button>
+              </div>
+            </div>
+            <!-- Колер -->
+            <div class="submenu-item">
+              <div class="submenu-label">Колер</div>
+              <div class="submenu-level2">
+                <button data-action="show_coler_params_dialog">Конструктивные параметры</button>
+                <button data-action="show_coler_limits_dialog">Ограничения по координатам</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Система управления -->
+        <div class="submenu-item">
+          <div class="submenu-label">Система управления</div>
+          <div class="submenu-level2">
+            <button data-action="show_motor_params_dialog">Параметры двигателей</button>
+            <button data-action="show_regulator_params_dialog">Параметры регуляторов</button>
+          </div>
+        </div>
+
+        <!-- Вычислитель -->
+        <button data-action="show_calculator_dialog">Вычислитель</button>
+
+        <!-- Движение -->
+        <div class="submenu-item">
+          <div class="submenu-label">Движение</div>
+          <div class="submenu-level2">
+            <button data-action="show_cyclegram_dialog">Позиционное</button>
+            <button data-action="show_trajectory_type_dialog">Контурное</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Меню "Расчет" -->
+    <div class="menu-root menu-item">
+      <div class="menu-label"> Расчет </div>
+      <div class="submenu">
+        <button data-action="show_graph_settings_dialog">График</button>
+        <button data-action="draw_workspace">Рабочая область</button>
+      </div>
+    </div>
+
+    <div class="menu-spacer"></div>
+  </div>
+
+  <!-- ===== Основное окно ===== -->
+  <div id="mainWrapper">
+    <div id="centralArea">
+      <!-- Левый док: время, погода -->
+      <aside id="leftDock">
+        <!-- DateTimeWidget -->
+        <div id="datetimeWidget">
+          <div id="datetimeLabel">--:--\n--.--.----</div>
+        </div>
+
+        <!-- WeatherWidget -->
+        <div id="weatherWidget">
+          <div id="weatherInfo">
+            Город: --<br>
+            Температура: --°C<br>
+            Погода: --
+          </div>
+          <div id="weatherIconBox">
+            <img id="weatherIcon" alt="Погода">
+          </div>
+        </div>
+      </aside>
+
+      <!-- Центральные вкладки -->
+      <main id="centerContent">
+        <div id="tabs" role="tablist" aria-label="Вкладки">
+          <div class="tab" role="tab" aria-selected="true" data-target="tabTrajectory">Траектория</div>
+          <div class="tab" role="tab" aria-selected="false" data-target="tabWorkspace">Рабочая область</div>
+          <div class="tab" role="tab" aria-selected="false" data-target="tabLog">Лог</div>
+        </div>
+        <div id="tabContent">
+          <section id="tabTrajectory" data-active="true">
+            <h3>Траектория</h3>
+            <p>Здесь будут графики траекторий (matplotlib) и таблица данных.</p>
+          </section>
+          <section id="tabWorkspace">
+            <h3>Рабочая область</h3>
+            <p>Здесь будет отображаться рабочая область / декартова плоскость.</p>
+          </section>
+          <section id="tabLog">
+            <h3>Лог</h3>
+            <p>Здесь можно вывести текстовый лог расчётов.</p>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Статусбар -->
+    <footer id="statusBar">
+      <div id="statusLeft">Готово</div>
+      <div id="statusRight">Статус подключения: локально</div>
+    </footer>
+  </div>
+
+
+ <!-- ===== Диалог "Тип робота" ===== -->
+  <dialog id="robotTypeDialog">
+    <div class="dlg">
+      <div class="dlg-header">Тип робота</div>
+      <div class="dlg-group">
+        <div class="dlg-radio">
+          <label><input type="radio" name="robotType" value="cartesian" checked> Декартовый</label>
+        </div>
+        <div class="dlg-radio">
+          <label><input type="radio" name="robotType" value="cylindrical"> Цилиндрический</label>
+        </div>
+        <div class="dlg-radio">
+          <label><input type="radio" name="robotType" value="scara"> Скара</label>
+        </div>
+        <div class="dlg-radio">
+          <label><input type="radio" name="robotType" value="coler"> Колер</label>
+        </div>
+      </div>
+      <div class="dlg-footer">
+        <button type="button" class="dlg-btn dlg-btn-help" id="robotTypeHelpBtn">Помощь</button>
+        <button type="button" class="dlg-btn dlg-btn-ok" id="robotTypeOkBtn">OK</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===== Диалог "Тип движения" ===== -->
+  <dialog id="movementTypeDialog">
+    <div class="dlg">
+      <div class="dlg-header">Тип движения</div>
+      <div class="dlg-group">
+        <div class="dlg-radio">
+          <label><input type="radio" name="movementType" value="position" checked> Позиционное</label>
+        </div>
+        <div class="dlg-radio">
+          <label><input type="radio" name="movementType" value="contour"> Контурное</label>
+        </div>
+      </div>
+      <div class="dlg-footer">
+        <button type="button" class="dlg-btn dlg-btn-help" id="movementTypeHelpBtn">Помощь</button>
+        <button type="button" class="dlg-btn dlg-btn-ok" id="movementTypeOkBtn">OK</button>
+      </div>
+    </div>
+  </dialog>
+
+<script>
+  // Глобальное состояние – выбранный тип робота и движения
+  const state = {
+    robotType: "cartesian",   // Декартовый
+    movementType: "position"  // Позиционное
+  };
+
+  // ==== Обновление времени ====
+  function updateDateTime() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    const timeStr = pad(now.getHours()) + ":" + pad(now.getMinutes());
+    const dateStr = pad(now.getDate()) + "." + pad(now.getMonth() + 1) + "." + now.getFullYear();
+    document.getElementById("datetimeLabel").textContent = timeStr + "\n" + dateStr;
+  }
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+
+  // ==== Загрузка погоды ====
+  async function loadWeather() {
+    try {
+      const r = await fetch("/api/weather");
+      const data = await r.json();
+
+      document.getElementById("weatherInfo").innerHTML =
+        "Город: " + (data.city || "--") + "<br>" +
+        "Температура: " +
+          (data.temp_c !== null && data.temp_c !== undefined
+            ? data.temp_c.toFixed(1) + "°C"
+            : "--") + "<br>" +
+        "Погода: " + (data.description || "--");
+
+      const iconEl = document.getElementById("weatherIcon");
+      if (data.icon_url) {
+        iconEl.src = data.icon_url;
+        iconEl.style.display = "";
+      } else {
+        iconEl.style.display = "none";
+      }
+    } catch (e) {
+      console.error("Weather error:", e);
+      document.getElementById("statusLeft").textContent = "Ошибка погоды: " + e;
+    }
+  }
+  loadWeather();
+  setInterval(loadWeather, 30 * 60 * 1000);
+
+  // ==== Вкладки (QTabWidget) ====
+  const tabs = document.querySelectorAll("#tabs .tab");
+  const panels = document.querySelectorAll("#tabContent > section");
+  document.getElementById("tabs").addEventListener("click", (e) => {
+    const tab = e.target.closest(".tab");
+    if (!tab) return;
+    tabs.forEach(t => t.setAttribute("aria-selected", String(t === tab)));
+    panels.forEach(p => p.dataset.active = (p.id === tab.dataset.target));
+  });
+
+  // ===== Диалог "Тип робота" =====
+  const robotDlg = document.getElementById("robotTypeDialog");
+  const robotOkBtn = document.getElementById("robotTypeOkBtn");
+  const robotHelpBtn = document.getElementById("robotTypeHelpBtn");
+
+  function openRobotTypeDialog() {
+    // выставляем радиокнопку по текущему состоянию
+    const radios = document.querySelectorAll('input[name="robotType"]');
+    radios.forEach(r => { r.checked = (r.value === state.robotType); });
+    robotDlg.showModal();
+  }
+
+  robotOkBtn.addEventListener("click", () => {
+    const sel = document.querySelector('input[name="robotType"]:checked');
+    if (sel) state.robotType = sel.value;
+    robotDlg.close();
+    updateStatusRobotMovement();
+  });
+
+  robotHelpBtn.addEventListener("click", () => {
+    alert("Выберите тип робота: Декартовый, Цилиндрический, Скара или Колер.\n\nЭто полный аналог окна 'Выбор типа робота' в десктопной версии.");
+  });
+
+  // ===== Диалог "Тип движения" =====
+  const moveDlg = document.getElementById("movementTypeDialog");
+  const moveOkBtn = document.getElementById("movementTypeOkBtn");
+  const moveHelpBtn = document.getElementById("movementTypeHelpBtn");
+
+  function openMovementTypeDialog() {
+    const radios = document.querySelectorAll('input[name="movementType"]');
+    radios.forEach(r => { r.checked = (r.value === state.movementType); });
+    moveDlg.showModal();
+  }
+
+  moveOkBtn.addEventListener("click", () => {
+    const sel = document.querySelector('input[name="movementType"]:checked');
+    if (sel) state.movementType = sel.value;
+    moveDlg.close();
+    updateStatusRobotMovement();
+  });
+
+  moveHelpBtn.addEventListener("click", () => {
+    alert("Выберите тип движения: позиционное или контурное.\n\nЭто аналог окна 'Выбор типа движения' в PyQt.");
+  });
+
+  // Человекопонятные подписи для статусбара
+  function robotTypeLabel() {
+    switch (state.robotType) {
+      case "cartesian": return "Декартовый";
+      case "cylindrical": return "Цилиндрический";
+      case "scara": return "Скара";
+      case "coler": return "Колер";
+      default: return state.robotType;
+    }
+  }
+  function movementTypeLabel() {
+    switch (state.movementType) {
+      case "position": return "Позиционное";
+      case "contour": return "Контурное";
+      default: return state.movementType;
+    }
+  }
+
+  function updateStatusRobotMovement() {
+    document.getElementById("statusRight").textContent =
+      "Тип робота: " + robotTypeLabel() + " | Тип движения: " + movementTypeLabel();
+  }
+  updateStatusRobotMovement();
+
+  // ==== Обработчики пунктов меню (как слоты) ====
+  const actions = {
+    show_creators_info() { alert("show_creators_info() – здесь показать окно 'Создатели'."); },
+    check_for_update() { alert("check_for_update() – здесь проверка обновлений."); },
+
+    load_data() { alert("load_data() – диалог 'Загрузить данные'."); },
+    save_data() { alert("save_data() – обычное сохранение."); },
+    save_data_as() { alert("save_data_as() – 'Сохранить как'."); },
+
+    // теперь открываем реальные диалоги
+    show_robot_type_dialog() { openRobotTypeDialog(); },
+    show_movement_type_dialog() { openMovementTypeDialog(); },
+
+    show_cartesian_params_dialog() { alert("Параметры декартового робота."); },
+    show_cartesian_limits_dialog() { alert("Ограничения декартового робота."); },
+
+    show_cylindrical_params_dialog() { alert("Параметры цилиндрического робота."); },
+    show_cylindrical_limits_dialog() { alert("Ограничения цилиндрического робота."); },
+
+    show_scara_params_dialog() { alert("Параметры СКАРА."); },
+    show_scara_limits_dialog() { alert("Ограничения СКАРА."); },
+
+    show_coler_params_dialog() { alert("Параметры Колер."); },
+    show_coler_limits_dialog() { alert("Ограничения Колер."); },
+
+    show_motor_params_dialog() { alert("Параметры двигателей."); },
+    show_regulator_params_dialog() { alert("Параметры регуляторов."); },
+
+    show_calculator_dialog() { alert("Вычислитель."); },
+
+    show_cyclegram_dialog() { alert("Позиционное движение (цикограмма)."); },
+    show_trajectory_type_dialog() { alert("Контурное движение (тип траектории)."); },
+
+    show_graph_settings_dialog() { alert("Настройки графика/расчёт графика."); },
+    draw_workspace() { alert("Расчёт и отрисовка рабочей области."); },
+  };
+
+  document.getElementById("menuBar").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    const name = btn.dataset.action;
+    if (name && typeof actions[name] === "function") {
+      actions[name]();
+    }
+  });
+</script>
+
+
+</body>
+</html>
