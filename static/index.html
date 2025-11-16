@@ -303,6 +303,36 @@
     background: red;
     color: white;
   }
+  /* ===== Только для Параметров двигателей и Параметров регуляторов ===== */
+dialog.dlg-wide .dlg {
+    width: 650px;      /* увеличенная ширина окна */
+    max-width: 650px;
+}
+
+/* Увеличенный размер полей */
+dialog.dlg-wide .dlg-form table input {
+    width: 140px;      /* было ~70px -> стало почти в 2 раза шире */
+}
+
+/* Чуть увеличим промежутки */
+dialog.dlg-wide .dlg-form table td {
+    padding: 8px 12px;
+}
+/* ===== Только для окна Параметров регуляторов (ещё шире) ===== */
+dialog.dlg-wide-big .dlg {
+    width: 960px;        /* 650px × 1.5 ≈ 975, округлил до 960 */
+    max-width: 960px;
+}
+
+/* Увеличим ширину полей и расстояния */
+dialog.dlg-wide-big .dlg-form table input {
+    width: 140px;        /* поля тоже больше (было 140) */
+}
+
+dialog.dlg-wide-big .dlg-form table td {
+    padding: 10px 14px;  /* немного больше отступы */
+}
+
 
 </style>
 
@@ -928,6 +958,109 @@
     </div>
   </dialog>
 
+  <!-- ===== Параметры двигателей ===== -->
+  <dialog id="motorParamsDialog" class="dlg-wide">
+    <div class="dlg">
+      <div class="dlg-header">
+        Параметры двигателей
+      </div>
+
+      <div class="dlg-form">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <tr>
+            <td>J1</td>
+            <td><input id="motor_J1" type="number" step="0.001"></td>
+            <td>J2</td>
+            <td><input id="motor_J2" type="number" step="0.001"></td>
+          </tr>
+          <tr>
+            <td>T_e1</td>
+            <td><input id="motor_Te1" type="number" step="0.001"></td>
+            <td>T_e2</td>
+            <td><input id="motor_Te2" type="number" step="0.001"></td>
+          </tr>
+          <tr>
+            <td>Umax1</td>
+            <td><input id="motor_Umax1" type="number" step="0.001"></td>
+            <td>Umax2</td>
+            <td><input id="motor_Umax2" type="number" step="0.001"></td>
+          </tr>
+          <tr>
+            <td>Fi1</td>
+            <td><input id="motor_Fi1" type="number" step="0.001"></td>
+            <td>Fi2</td>
+            <td><input id="motor_Fi2" type="number" step="0.001"></td>
+          </tr>
+          <tr>
+            <td>Ce1</td>
+            <td><input id="motor_Ce1" type="number" step="0.001"></td>
+            <td>Ce2</td>
+            <td><input id="motor_Ce2" type="number" step="0.001"></td>
+          </tr>
+          <tr>
+            <td>Ra1</td>
+            <td><input id="motor_Ra1" type="number" step="0.001"></td>
+            <td>Ra2</td>
+            <td><input id="motor_Ra2" type="number" step="0.001"></td>
+          </tr>
+          <tr>
+            <td>Cm1</td>
+            <td><input id="motor_Cm1" type="number" step="0.001"></td>
+            <td>Cm2</td>
+            <td><input id="motor_Cm2" type="number" step="0.001"></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="motorParamsOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="motorParamsHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="motorParamsCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+    <!-- ===== Параметры регуляторов ===== -->
+  <dialog id="regulatorParamsDialog" class="dlg-wide dlg-wide-big">
+    <div class="dlg">
+      <div class="dlg-header">
+        Параметры регуляторов
+      </div>
+
+      <div class="dlg-form">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <tr>
+            <td>Kп1</td><td><input id="reg_Kp1" type="number" step="0.001"></td>
+            <td>Kп2</td><td><input id="reg_Kp2" type="number" step="0.001"></td>
+            <td>Kп3</td><td><input id="reg_Kp3" type="number" step="0.001"></td>
+            <td>Kп4</td><td><input id="reg_Kp4" type="number" step="0.001"></td>
+          </tr>
+          <tr>
+            <td>Kи1</td><td><input id="reg_Ki1" type="number" step="0.001"></td>
+            <td>Kи2</td><td><input id="reg_Ki2" type="number" step="0.001"></td>
+            <td>Kи3</td><td><input id="reg_Ki3" type="number" step="0.001"></td>
+            <td>Kи4</td><td><input id="reg_Ki4" type="number" step="0.001"></td>
+          </tr>
+          <tr>
+            <td>Kд1</td><td><input id="reg_Kd1" type="number" step="0.001"></td>
+            <td>Kд2</td><td><input id="reg_Kd2" type="number" step="0.001"></td>
+            <td>Kд3</td><td><input id="reg_Kd3" type="number" step="0.001"></td>
+            <td>Kд4</td><td><input id="reg_Kd4" type="number" step="0.001"></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="regParamsOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="regParamsHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="regParamsCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
 
 
 <script>
@@ -1006,6 +1139,23 @@
       q1Min: null, q1Max: null,
       q3Min: null, q3Max: null,
       zMin:  null, zMax:  null,
+    },
+        // Параметры двигателей (для 2 двигателей)
+    motorParams: {
+      J:    [null, null],
+      Te:   [null, null],   // T_e1, T_e2
+      Umax: [null, null],
+      Fi:   [null, null],
+      Ce:   [null, null],
+      Ra:   [null, null],
+      Cm:   [null, null],
+    },
+
+    // Параметры регуляторов (4 контура)
+    regulatorParams: {
+      Kp: [null, null, null, null],
+      Ki: [null, null, null, null],
+      Kd: [null, null, null, null],
     },
 
   };
@@ -1552,6 +1702,162 @@
           "Это веб-аналог show_coler_limits_dialog.");
   });
 
+    // ===== Параметры двигателей =====
+  const motorParamsDlg       = document.getElementById("motorParamsDialog");
+  const motorParamsOkBtn     = document.getElementById("motorParamsOkBtn");
+  const motorParamsHelpBtn   = document.getElementById("motorParamsHelpBtn");
+  const motorParamsCancelBtn = document.getElementById("motorParamsCancelBtn");
+
+  const motor_J1   = document.getElementById("motor_J1");
+  const motor_J2   = document.getElementById("motor_J2");
+  const motor_Te1  = document.getElementById("motor_Te1");
+  const motor_Te2  = document.getElementById("motor_Te2");
+  const motor_Umax1= document.getElementById("motor_Umax1");
+  const motor_Umax2= document.getElementById("motor_Umax2");
+  const motor_Fi1  = document.getElementById("motor_Fi1");
+  const motor_Fi2  = document.getElementById("motor_Fi2");
+  const motor_Ce1  = document.getElementById("motor_Ce1");
+  const motor_Ce2  = document.getElementById("motor_Ce2");
+  const motor_Ra1  = document.getElementById("motor_Ra1");
+  const motor_Ra2  = document.getElementById("motor_Ra2");
+  const motor_Cm1  = document.getElementById("motor_Cm1");
+  const motor_Cm2  = document.getElementById("motor_Cm2");
+
+  function openMotorParamsDialog() {
+    const m = state.motorParams;
+    motor_J1.value    = m.J[0]    ?? "";
+    motor_J2.value    = m.J[1]    ?? "";
+    motor_Te1.value   = m.Te[0]   ?? "";
+    motor_Te2.value   = m.Te[1]   ?? "";
+    motor_Umax1.value = m.Umax[0] ?? "";
+    motor_Umax2.value = m.Umax[1] ?? "";
+    motor_Fi1.value   = m.Fi[0]   ?? "";
+    motor_Fi2.value   = m.Fi[1]   ?? "";
+    motor_Ce1.value   = m.Ce[0]   ?? "";
+    motor_Ce2.value   = m.Ce[1]   ?? "";
+    motor_Ra1.value   = m.Ra[0]   ?? "";
+    motor_Ra2.value   = m.Ra[1]   ?? "";
+    motor_Cm1.value   = m.Cm[0]   ?? "";
+    motor_Cm2.value   = m.Cm[1]   ?? "";
+    motorParamsDlg.showModal();
+  }
+
+  motorParamsOkBtn.addEventListener("click", () => {
+    const J1    = parseField(motor_J1);
+    const J2    = parseField(motor_J2);
+    const Te1   = parseField(motor_Te1);
+    const Te2   = parseField(motor_Te2);
+    const Umax1 = parseField(motor_Umax1);
+    const Umax2 = parseField(motor_Umax2);
+    const Fi1   = parseField(motor_Fi1);
+    const Fi2   = parseField(motor_Fi2);
+    const Ce1   = parseField(motor_Ce1);
+    const Ce2   = parseField(motor_Ce2);
+    const Ra1   = parseField(motor_Ra1);
+    const Ra2   = parseField(motor_Ra2);
+    const Cm1   = parseField(motor_Cm1);
+    const Cm2   = parseField(motor_Cm2);
+
+    if ([J1,J2,Te1,Te2,Umax1,Umax2,Fi1,Fi2,Ce1,Ce2,Ra1,Ra2,Cm1,Cm2].some(v => v === null)) {
+      alert("Некорректные параметры двигателей. Проверьте введённые значения.");
+      return;
+    }
+
+    state.motorParams = {
+      J:    [J1, J2],
+      Te:   [Te1, Te2],
+      Umax: [Umax1, Umax2],
+      Fi:   [Fi1, Fi2],
+      Ce:   [Ce1, Ce2],
+      Ra:   [Ra1, Ra2],
+      Cm:   [Cm1, Cm2],
+    };
+
+    motorParamsDlg.close();
+    updateStatus();
+  });
+
+  motorParamsCancelBtn.addEventListener("click", () => motorParamsDlg.close());
+
+  motorParamsHelpBtn.addEventListener("click", () => {
+    alert("Параметры двигателей: инерции J1/J2, электромагн. постоянные T_e, " +
+          "максимальные напряжения Umax, потоки Fi, коэффициенты Ce, сопротивления Ra, моменты Cm.\n" +
+          "Аналог show_motor_params_dialog в PyQt.");
+  });
+
+    // ===== Параметры регуляторов =====
+  const regParamsDlg       = document.getElementById("regulatorParamsDialog");
+  const regParamsOkBtn     = document.getElementById("regParamsOkBtn");
+  const regParamsHelpBtn   = document.getElementById("regParamsHelpBtn");
+  const regParamsCancelBtn = document.getElementById("regParamsCancelBtn");
+
+  const reg_Kp1 = document.getElementById("reg_Kp1");
+  const reg_Kp2 = document.getElementById("reg_Kp2");
+  const reg_Kp3 = document.getElementById("reg_Kp3");
+  const reg_Kp4 = document.getElementById("reg_Kp4");
+  const reg_Ki1 = document.getElementById("reg_Ki1");
+  const reg_Ki2 = document.getElementById("reg_Ki2");
+  const reg_Ki3 = document.getElementById("reg_Ki3");
+  const reg_Ki4 = document.getElementById("reg_Ki4");
+  const reg_Kd1 = document.getElementById("reg_Kd1");
+  const reg_Kd2 = document.getElementById("reg_Kd2");
+  const reg_Kd3 = document.getElementById("reg_Kd3");
+  const reg_Kd4 = document.getElementById("reg_Kd4");
+
+  function openRegulatorParamsDialog() {
+    const r = state.regulatorParams;
+    reg_Kp1.value = r.Kp[0] ?? "";
+    reg_Kp2.value = r.Kp[1] ?? "";
+    reg_Kp3.value = r.Kp[2] ?? "";
+    reg_Kp4.value = r.Kp[3] ?? "";
+    reg_Ki1.value = r.Ki[0] ?? "";
+    reg_Ki2.value = r.Ki[1] ?? "";
+    reg_Ki3.value = r.Ki[2] ?? "";
+    reg_Ki4.value = r.Ki[3] ?? "";
+    reg_Kd1.value = r.Kd[0] ?? "";
+    reg_Kd2.value = r.Kd[1] ?? "";
+    reg_Kd3.value = r.Kd[2] ?? "";
+    reg_Kd4.value = r.Kd[3] ?? "";
+    regParamsDlg.showModal();
+  }
+
+  regParamsOkBtn.addEventListener("click", () => {
+    const Kp1 = parseField(reg_Kp1);
+    const Kp2 = parseField(reg_Kp2);
+    const Kp3 = parseField(reg_Kp3);
+    const Kp4 = parseField(reg_Kp4);
+    const Ki1 = parseField(reg_Ki1);
+    const Ki2 = parseField(reg_Ki2);
+    const Ki3 = parseField(reg_Ki3);
+    const Ki4 = parseField(reg_Ki4);
+    const Kd1 = parseField(reg_Kd1);
+    const Kd2 = parseField(reg_Kd2);
+    const Kd3 = parseField(reg_Kd3);
+    const Kd4 = parseField(reg_Kd4);
+
+    if ([Kp1,Kp2,Kp3,Kp4,Ki1,Ki2,Ki3,Ki4,Kd1,Kd2,Kd3,Kd4].some(v => v === null)) {
+      alert("Некорректные параметры регуляторов. Проверьте введённые значения.");
+      return;
+    }
+
+    state.regulatorParams = {
+      Kp: [Kp1,Kp2,Kp3,Kp4],
+      Ki: [Ki1,Ki2,Ki3,Ki4],
+      Kd: [Kd1,Kd2,Kd3,Kd4],
+    };
+
+    regParamsDlg.close();
+    updateStatus();
+  });
+
+  regParamsCancelBtn.addEventListener("click", () => regParamsDlg.close());
+
+  regParamsHelpBtn.addEventListener("click", () => {
+    alert("Параметры регуляторов (PID):\n" +
+          "Kп1–Kп4, Kи1–Kи4, Kд1–Kд4 для трёх ветвей.\n" +
+          "Это веб-аналог show_regulator_params_dialog.");
+  });
+
 
 
   // ===== Обновление статусбара =====
@@ -1579,6 +1885,9 @@
       : "Колер: параметры не заданы";
   }
 
+const mp = state.motorParams;
+    const motorsOk = mp.J[0] != null;
+    const motorsInfo = motorsOk ? ` | Двигатели: J1=${mp.J[0]}, J2=${mp.J[1]}` : "";
 
     document.getElementById("statusRight").textContent =
       `Тип робота: ${robotTypeLabel()} | Тип движения: ${movementTypeLabel()} | ${extra}`;
@@ -1612,8 +1921,9 @@
     show_coler_params_dialog()       { openColerParamsDialog(); },
     show_coler_limits_dialog()       { openColerLimitsDialog(); },
 
-    show_motor_params_dialog()   { alert("Параметры двигателей."); },
-    show_regulator_params_dialog(){ alert("Параметры регуляторов."); },
+    show_motor_params_dialog()      { openMotorParamsDialog(); },
+    show_regulator_params_dialog()  { openRegulatorParamsDialog(); },
+
 
     show_calculator_dialog()     { alert("Вычислитель."); },
 
