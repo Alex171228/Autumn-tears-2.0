@@ -246,53 +246,64 @@
     box-sizing: border-box;
   }
 
- /* ===== Модальные окна (как QDialog) ===== */
-  dialog {
-    border: 1px solid #999;
-    border-radius: 4px;
-    padding: 0;
-    font-family: inherit;
-  }
+ /* Диалоги параметров / ограничений */
   .dlg {
-    width: 260px;
-    background: #f5f5f5;
+    width: 320px;
+    background: #f0f0f0;
   }
   .dlg-header {
     font-size: 18px;
     font-weight: 700;
     padding: 8px 12px 4px;
   }
-  .dlg-group {
+  .dlg-form {
     margin: 0 10px 10px;
     padding: 10px;
     background: #ffffff;
     border: 1px solid #d4d4d4;
   }
-  .dlg-group legend {
-    font-weight: 600;
-    padding: 0 4px;
-  }
-  .dlg-radio {
+  .dlg-form-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 6px;
     margin: 4px 0;
-    font-size: 14px;
+    font-size: 13px;
   }
+  .dlg-form-row label {
+    margin-right: 6px;
+  }
+  .dlg-form-row input {
+    width: 80px;
+    padding: 2px 4px;
+    font-size: 13px;
+  }
+
   .dlg-footer {
     padding: 0 10px 10px;
   }
+  .dlg-footer-row {
+    display: flex;
+    gap: 4px;
+  }
   .dlg-btn {
-    width: 100%;
+    flex: 1;
     padding: 6px 0;
     border: none;
     font-size: 14px;
     cursor: pointer;
-    margin-top: 4px;
   }
   .dlg-btn-help {
-    background: #7fb9ff;
+    background: #87CEEB;
   }
   .dlg-btn-ok {
-    background: #00ff00;
+    background: #18f22e;
   }
+  .dlg-btn-cancel {
+    background: red;
+    color: white;
+  }
+
 </style>
 
 <body>
@@ -505,14 +516,375 @@
     </div>
   </dialog>
 
+<!-- ===== Конструктивные параметры Декартового робота ===== -->
+  <dialog id="robotParamsDialog">
+    <div class="dlg">
+      <div class="dlg-header" id="robotParamsTitle">
+        Конструктивные параметры Декартового робота
+      </div>
+
+      <div class="dlg-form">
+        <div class="dlg-form-row">
+          <label for="mass1">Масса 1-го звена</label>
+          <input id="mass1" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="mass3">Масса 3-го звена</label>
+          <input id="mass3" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="mass2">Масса 2-го звена</label>
+          <input id="mass2" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="moment">Момент инерции</label>
+          <input id="moment" type="number" step="0.001">
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="robotParamsOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="robotParamsHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="robotParamsCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===== Ограничения по координатам Декартового робота ===== -->
+  <dialog id="robotLimitsDialog">
+    <div class="dlg">
+      <div class="dlg-header" id="robotLimitsTitle">
+        Ограничения по координатам
+      </div>
+
+      <div class="dlg-form">
+        <div class="dlg-form-row">
+          <label for="limXmin">X Мин:</label>
+          <input id="limXmin" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="limXmax">X Макс:</label>
+          <input id="limXmax" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="limYmin">Y Мин:</label>
+          <input id="limYmin" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="limYmax">Y Макс:</label>
+          <input id="limYmax" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="limZmin">Z Мин:</label>
+          <input id="limZmin" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="limZmax">Z Макс:</label>
+          <input id="limZmax" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="limQmin">Q Мин:</label>
+          <input id="limQmin" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="limQmax">Q Макс:</label>
+          <input id="limQmax" type="number" step="0.001">
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="robotLimitsOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="robotLimitsHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="robotLimitsCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+    <!-- ===== Конструктивные параметры Скара ===== -->
+  <dialog id="scaraParamsDialog">
+    <div class="dlg">
+      <div class="dlg-header">
+        Конструктивные параметры Скара
+      </div>
+
+      <div class="dlg-form">
+        <div class="dlg-form-row">
+          <label for="sc_moment1">Момент 1-го звена</label>
+          <input id="sc_moment1" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_moment2">Момент 2-го звена</label>
+          <input id="sc_moment2" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_moment3">Момент 3-го звена</label>
+          <input id="sc_moment3" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_length1">Длина 1-го звена</label>
+          <input id="sc_length1" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_length2">Длина 2-го звена</label>
+          <input id="sc_length2" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_distance">Расстояние</label>
+          <input id="sc_distance" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_mass2">Масса 2-го звена</label>
+          <input id="sc_mass2" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_mass3">Масса 3-го звена</label>
+          <input id="sc_mass3" type="number" step="0.001">
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="scaraParamsOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="scaraParamsHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="scaraParamsCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===== Ограничения по координатам Скара ===== -->
+  <dialog id="scaraLimitsDialog">
+    <div class="dlg">
+      <div class="dlg-header">
+        Ограничения по координатам Скара
+      </div>
+
+      <div class="dlg-form">
+        <div class="dlg-form-row">
+          <label for="sc_q1min">Q1min</label>
+          <input id="sc_q1min" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_q1max">Q1max</label>
+          <input id="sc_q1max" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="sc_q2min">Q2min</label>
+          <input id="sc_q2min" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_q2max">Q2max</label>
+          <input id="sc_q2max" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="sc_q3min">Q3min</label>
+          <input id="sc_q3min" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_q3max">Q3max</label>
+          <input id="sc_q3max" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="sc_zmin">Zmin</label>
+          <input id="sc_zmin" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="sc_zmax">Zmax</label>
+          <input id="sc_zmax" type="number" step="0.001">
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="scaraLimitsOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="scaraLimitsHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="scaraLimitsCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===== Конструктивные параметры Цилиндр ===== -->
+  <dialog id="cylParamsDialog">
+    <div class="dlg">
+      <div class="dlg-header">
+        Конструктивные параметры Цилиндр
+      </div>
+
+      <div class="dlg-form">
+        <div class="dlg-form-row">
+          <label for="cyl_moment1">Момент 1-го звена</label>
+          <input id="cyl_moment1" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_moment2">Момент 2-го звена</label>
+          <input id="cyl_moment2" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_moment3">Момент 3-го звена</label>
+          <input id="cyl_moment3" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_length1">Длина 1-го звена</label>
+          <input id="cyl_length1" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_length2">Длина 2-го звена</label>
+          <input id="cyl_length2" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_distance">Расстояние</label>
+          <input id="cyl_distance" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_mass2">Масса 2-го звена</label>
+          <input id="cyl_mass2" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_mass3">Масса 3-го звена</label>
+          <input id="cyl_mass3" type="number" step="0.001">
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="cylParamsOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="cylParamsHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="cylParamsCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===== Ограничения по координатам Цилиндр ===== -->
+  <dialog id="cylLimitsDialog">
+    <div class="dlg">
+      <div class="dlg-header">
+        Ограничения по координатам Цилиндр
+      </div>
+
+      <div class="dlg-form">
+        <div class="dlg-form-row">
+          <label for="cyl_q1min">Q1min</label>
+          <input id="cyl_q1min" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_q1max">Q1max</label>
+          <input id="cyl_q1max" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="cyl_a2min">A2min</label>
+          <input id="cyl_a2min" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_a2max">A2max</label>
+          <input id="cyl_a2max" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="cyl_q3min">Q3min</label>
+          <input id="cyl_q3min" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_q3max">Q3max</label>
+          <input id="cyl_q3max" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="cyl_zmin">Zmin</label>
+          <input id="cyl_zmin" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="cyl_zmax">Zmax</label>
+          <input id="cyl_zmax" type="number" step="0.001">
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="cylLimitsOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="cylLimitsHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="cylLimitsCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+
+
+
 <script>
-  // Глобальное состояние – выбранный тип робота и движения
+  // ===== Глобальное состояние =====
   const state = {
-    robotType: "cartesian",   // Декартовый
-    movementType: "position"  // Позиционное
+    robotType: "cartesian",   // Декартовый / scara / ...
+    movementType: "position", // Позиционное / контурное
+
+    // Декартовый
+    cartesianParams: {
+      mass1: null,
+      mass2: null,
+      mass3: null,
+      moment: null,
+    },
+    cartesianLimits: {
+      Xmin: null, Xmax: null,
+      Ymin: null, Ymax: null,
+      Zmin: null, Zmax: null,
+      Qmin: null, Qmax: null,
+    },
+
+    // Скара – конструктивные параметры
+    scaraParams: {
+      moment1: null,
+      moment2: null,
+      moment3: null,
+      length1: null,
+      length2: null,
+      distance: null,
+      mass2: null,
+      mass3: null,
+    },
+
+    // Скара – ограничения
+    scaraLimits: {
+      q1Min: null, q1Max: null,
+      q2Min: null, q2Max: null,
+      q3Min: null, q3Max: null,
+      zMin:  null, zMax:  null,
+    },
+ // Цилиндр – конструктивные параметры
+    cylindricalParams: {
+      moment1: null,
+      moment2: null,
+      moment3: null,
+      length1: null,
+      length2: null,
+      distance: null,
+      mass2: null,
+      mass3: null,
+    },
+
+    // Цилиндр – ограничения
+    cylindricalLimits: {
+      q1Min: null, q1Max: null,
+      a2Min: null, a2Max: null,
+      q3Min: null, q3Max: null,
+      zMin:  null, zMax:  null,
+    },
   };
 
-  // ==== Обновление времени ====
+  // ===== Время =====
   function updateDateTime() {
     const now = new Date();
     const pad = n => String(n).padStart(2, "0");
@@ -523,7 +895,7 @@
   updateDateTime();
   setInterval(updateDateTime, 1000);
 
-  // ==== Загрузка погоды ====
+  // ===== Погода =====
   async function loadWeather() {
     try {
       const r = await fetch("/api/weather");
@@ -552,7 +924,7 @@
   loadWeather();
   setInterval(loadWeather, 30 * 60 * 1000);
 
-  // ==== Вкладки (QTabWidget) ====
+  // ===== Вкладки =====
   const tabs = document.querySelectorAll("#tabs .tab");
   const panels = document.querySelectorAll("#tabContent > section");
   document.getElementById("tabs").addEventListener("click", (e) => {
@@ -568,7 +940,6 @@
   const robotHelpBtn = document.getElementById("robotTypeHelpBtn");
 
   function openRobotTypeDialog() {
-    // выставляем радиокнопку по текущему состоянию
     const radios = document.querySelectorAll('input[name="robotType"]');
     radios.forEach(r => { r.checked = (r.value === state.robotType); });
     robotDlg.showModal();
@@ -578,11 +949,11 @@
     const sel = document.querySelector('input[name="robotType"]:checked');
     if (sel) state.robotType = sel.value;
     robotDlg.close();
-    updateStatusRobotMovement();
+    updateStatus();
   });
 
   robotHelpBtn.addEventListener("click", () => {
-    alert("Выберите тип робота: Декартовый, Цилиндрический, Скара или Колер.\n\nЭто полный аналог окна 'Выбор типа робота' в десктопной версии.");
+    alert("Выберите тип робота: Декартовый, Цилиндрический, Скара или Колер.");
   });
 
   // ===== Диалог "Тип движения" =====
@@ -600,72 +971,413 @@
     const sel = document.querySelector('input[name="movementType"]:checked');
     if (sel) state.movementType = sel.value;
     moveDlg.close();
-    updateStatusRobotMovement();
+    updateStatus();
   });
 
   moveHelpBtn.addEventListener("click", () => {
-    alert("Выберите тип движения: позиционное или контурное.\n\nЭто аналог окна 'Выбор типа движения' в PyQt.");
+    alert("Выберите тип движения: позиционное или контурное.");
   });
 
-  // Человекопонятные подписи для статусбара
   function robotTypeLabel() {
     switch (state.robotType) {
-      case "cartesian": return "Декартовый";
+      case "cartesian":   return "Декартовый";
       case "cylindrical": return "Цилиндрический";
-      case "scara": return "Скара";
-      case "coler": return "Колер";
-      default: return state.robotType;
+      case "scara":       return "Скара";
+      case "coler":       return "Колер";
+      default:            return state.robotType;
     }
   }
   function movementTypeLabel() {
     switch (state.movementType) {
       case "position": return "Позиционное";
-      case "contour": return "Контурное";
-      default: return state.movementType;
+      case "contour":  return "Контурное";
+      default:         return state.movementType;
     }
   }
 
-  function updateStatusRobotMovement() {
-    document.getElementById("statusRight").textContent =
-      "Тип робота: " + robotTypeLabel() + " | Тип движения: " + movementTypeLabel();
+  // ===== Общая проверка чисел =====
+  function parseField(input) {
+    const v = parseFloat(String(input.value).replace(",", "."));
+    if (Number.isNaN(v)) {
+      input.style.borderColor = "red";
+      return null;
+    }
+    input.style.borderColor = "#d4d4d4";
+    return v;
   }
-  updateStatusRobotMovement();
 
-  // ==== Обработчики пунктов меню (как слоты) ====
+  // ===== Декартовый: конструктивные параметры =====
+  const robotParamsDlg = document.getElementById("robotParamsDialog");
+  const robotParamsOkBtn = document.getElementById("robotParamsOkBtn");
+  const robotParamsHelpBtn = document.getElementById("robotParamsHelpBtn");
+  const robotParamsCancelBtn = document.getElementById("robotParamsCancelBtn");
+
+  const mass1Input = document.getElementById("mass1");
+  const mass2Input = document.getElementById("mass2");
+  const mass3Input = document.getElementById("mass3");
+  const momentInput = document.getElementById("moment");
+
+  function openCartesianParamsDialog() {
+    const p = state.cartesianParams;
+    mass1Input.value = p.mass1 ?? "";
+    mass2Input.value = p.mass2 ?? "";
+    mass3Input.value = p.mass3 ?? "";
+    momentInput.value = p.moment ?? "";
+    robotParamsDlg.showModal();
+  }
+
+  robotParamsOkBtn.addEventListener("click", () => {
+    const m1 = parseField(mass1Input);
+    const m2 = parseField(mass2Input);
+    const m3 = parseField(mass3Input);
+    const mo = parseField(momentInput);
+
+    if ([m1, m2, m3, mo].some(v => v === null)) {
+      alert("Некорректные значения масс/момента инерции.");
+      return;
+    }
+
+    state.cartesianParams = { mass1: m1, mass2: m2, mass3: m3, moment: mo };
+    robotParamsDlg.close();
+    updateStatus();
+  });
+
+  robotParamsCancelBtn.addEventListener("click", () => robotParamsDlg.close());
+  robotParamsHelpBtn.addEventListener("click", () => {
+    alert("Конструктивные параметры Декартового робота: массы 1-3 звеньев и момент инерции.");
+  });
+
+  // ===== Декартовый: ограничения =====
+  const robotLimitsDlg = document.getElementById("robotLimitsDialog");
+  const robotLimitsOkBtn = document.getElementById("robotLimitsOkBtn");
+  const robotLimitsHelpBtn = document.getElementById("robotLimitsHelpBtn");
+  const robotLimitsCancelBtn = document.getElementById("robotLimitsCancelBtn");
+
+  const limXmin = document.getElementById("limXmin");
+  const limXmax = document.getElementById("limXmax");
+  const limYmin = document.getElementById("limYmin");
+  const limYmax = document.getElementById("limYmax");
+  const limZmin = document.getElementById("limZmin");
+  const limZmax = document.getElementById("limZmax");
+  const limQmin = document.getElementById("limQmin");
+  const limQmax = document.getElementById("limQmax");
+
+  function openCartesianLimitsDialog() {
+    const l = state.cartesianLimits;
+    limXmin.value = l.Xmin ?? "";
+    limXmax.value = l.Xmax ?? "";
+    limYmin.value = l.Ymin ?? "";
+    limYmax.value = l.Ymax ?? "";
+    limZmin.value = l.Zmin ?? "";
+    limZmax.value = l.Zmax ?? "";
+    limQmin.value = l.Qmin ?? "";
+    limQmax.value = l.Qmax ?? "";
+    robotLimitsDlg.showModal();
+  }
+
+  robotLimitsOkBtn.addEventListener("click", () => {
+    const Xmin = parseField(limXmin);
+    const Xmax = parseField(limXmax);
+    const Ymin = parseField(limYmin);
+    const Ymax = parseField(limYmax);
+    const Zmin = parseField(limZmin);
+    const Zmax = parseField(limZmax);
+    const Qmin = parseField(limQmin);
+    const Qmax = parseField(limQmax);
+
+    if ([Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Qmin,Qmax].some(v => v === null)) {
+      alert("Некорректные ограничения по координатам.");
+      return;
+    }
+
+    state.cartesianLimits = { Xmin, Xmax, Ymin, Ymax, Zmin, Zmax, Qmin, Qmax };
+    robotLimitsDlg.close();
+    updateStatus();
+  });
+
+  robotLimitsCancelBtn.addEventListener("click", () => robotLimitsDlg.close());
+  robotLimitsHelpBtn.addEventListener("click", () => {
+    alert("Ограничения по координатам для декартового робота (X, Y, Z, Q).");
+  });
+
+  // ===== Скара: конструктивные параметры =====
+  const scaraParamsDlg = document.getElementById("scaraParamsDialog");
+  const scaraParamsOkBtn = document.getElementById("scaraParamsOkBtn");
+  const scaraParamsHelpBtn = document.getElementById("scaraParamsHelpBtn");
+  const scaraParamsCancelBtn = document.getElementById("scaraParamsCancelBtn");
+
+  const sc_moment1 = document.getElementById("sc_moment1");
+  const sc_moment2 = document.getElementById("sc_moment2");
+  const sc_moment3 = document.getElementById("sc_moment3");
+  const sc_length1 = document.getElementById("sc_length1");
+  const sc_length2 = document.getElementById("sc_length2");
+  const sc_distance = document.getElementById("sc_distance");
+  const sc_mass2 = document.getElementById("sc_mass2");
+  const sc_mass3 = document.getElementById("sc_mass3");
+
+  function openScaraParamsDialog() {
+    const p = state.scaraParams;
+    sc_moment1.value = p.moment1 ?? "";
+    sc_moment2.value = p.moment2 ?? "";
+    sc_moment3.value = p.moment3 ?? "";
+    sc_length1.value = p.length1 ?? "";
+    sc_length2.value = p.length2 ?? "";
+    sc_distance.value = p.distance ?? "";
+    sc_mass2.value = p.mass2 ?? "";
+    sc_mass3.value = p.mass3 ?? "";
+    scaraParamsDlg.showModal();
+  }
+
+  scaraParamsOkBtn.addEventListener("click", () => {
+    const moment1 = parseField(sc_moment1);
+    const moment2 = parseField(sc_moment2);
+    const moment3 = parseField(sc_moment3);
+    const length1 = parseField(sc_length1);
+    const length2 = parseField(sc_length2);
+    const distance = parseField(sc_distance);
+    const mass2   = parseField(sc_mass2);
+    const mass3   = parseField(sc_mass3);
+
+    if ([moment1,moment2,moment3,length1,length2,distance,mass2,mass3].some(v => v === null)) {
+      alert("Некорректные конструктивные параметры Скара.");
+      return;
+    }
+
+    state.scaraParams = { moment1, moment2, moment3, length1, length2, distance, mass2, mass3 };
+    scaraParamsDlg.close();
+    updateStatus();
+  });
+
+  scaraParamsCancelBtn.addEventListener("click", () => scaraParamsDlg.close());
+  scaraParamsHelpBtn.addEventListener("click", () => {
+    alert("Параметры СКАРА: моменты 1-3 звеньев, длины звеньев, расстояние, массы 2-3 звеньев.\nЭто веб-аналог show_scara_params_dialog.");
+  });
+
+  // ===== Скара: ограничения =====
+  const scaraLimitsDlg = document.getElementById("scaraLimitsDialog");
+  const scaraLimitsOkBtn = document.getElementById("scaraLimitsOkBtn");
+  const scaraLimitsHelpBtn = document.getElementById("scaraLimitsHelpBtn");
+  const scaraLimitsCancelBtn = document.getElementById("scaraLimitsCancelBtn");
+
+  const sc_q1min = document.getElementById("sc_q1min");
+  const sc_q1max = document.getElementById("sc_q1max");
+  const sc_q2min = document.getElementById("sc_q2min");
+  const sc_q2max = document.getElementById("sc_q2max");
+  const sc_q3min = document.getElementById("sc_q3min");
+  const sc_q3max = document.getElementById("sc_q3max");
+  const sc_zmin  = document.getElementById("sc_zmin");
+  const sc_zmax  = document.getElementById("sc_zmax");
+
+  function openScaraLimitsDialog() {
+    const l = state.scaraLimits;
+    sc_q1min.value = l.q1Min ?? "";
+    sc_q1max.value = l.q1Max ?? "";
+    sc_q2min.value = l.q2Min ?? "";
+    sc_q2max.value = l.q2Max ?? "";
+    sc_q3min.value = l.q3Min ?? "";
+    sc_q3max.value = l.q3Max ?? "";
+    sc_zmin.value  = l.zMin  ?? "";
+    sc_zmax.value  = l.zMax  ?? "";
+    scaraLimitsDlg.showModal();
+  }
+
+  scaraLimitsOkBtn.addEventListener("click", () => {
+    const q1Min = parseField(sc_q1min);
+    const q1Max = parseField(sc_q1max);
+    const q2Min = parseField(sc_q2min);
+    const q2Max = parseField(sc_q2max);
+    const q3Min = parseField(sc_q3min);
+    const q3Max = parseField(sc_q3max);
+    const zMin  = parseField(sc_zmin);
+    const zMax  = parseField(sc_zmax);
+
+    if ([q1Min,q1Max,q2Min,q2Max,q3Min,q3Max,zMin,zMax].some(v => v === null)) {
+      alert("Некорректные ограничения для Скара.");
+      return;
+    }
+
+    state.scaraLimits = { q1Min,q1Max,q2Min,q2Max,q3Min,q3Max,zMin,zMax };
+    scaraLimitsDlg.close();
+    updateStatus();
+  });
+
+  scaraLimitsCancelBtn.addEventListener("click", () => scaraLimitsDlg.close());
+  scaraLimitsHelpBtn.addEventListener("click", () => {
+    alert("Ограничения по обобщённым координатам СКАРА (Q1–Q3, Z).\nАналог show_scara_limits_dialog.");
+  });
+
+    // ===== Цилиндр: конструктивные параметры =====
+  const cylParamsDlg = document.getElementById("cylParamsDialog");
+  const cylParamsOkBtn = document.getElementById("cylParamsOkBtn");
+  const cylParamsHelpBtn = document.getElementById("cylParamsHelpBtn");
+  const cylParamsCancelBtn = document.getElementById("cylParamsCancelBtn");
+
+  const cyl_moment1 = document.getElementById("cyl_moment1");
+  const cyl_moment2 = document.getElementById("cyl_moment2");
+  const cyl_moment3 = document.getElementById("cyl_moment3");
+  const cyl_length1 = document.getElementById("cyl_length1");
+  const cyl_length2 = document.getElementById("cyl_length2");
+  const cyl_distance = document.getElementById("cyl_distance");
+  const cyl_mass2   = document.getElementById("cyl_mass2");
+  const cyl_mass3   = document.getElementById("cyl_mass3");
+
+  function openCylindricalParamsDialog() {
+    const p = state.cylindricalParams;
+    cyl_moment1.value = p.moment1 ?? "";
+    cyl_moment2.value = p.moment2 ?? "";
+    cyl_moment3.value = p.moment3 ?? "";
+    cyl_length1.value = p.length1 ?? "";
+    cyl_length2.value = p.length2 ?? "";
+    cyl_distance.value = p.distance ?? "";
+    cyl_mass2.value   = p.mass2 ?? "";
+    cyl_mass3.value   = p.mass3 ?? "";
+    cylParamsDlg.showModal();
+  }
+
+  cylParamsOkBtn.addEventListener("click", () => {
+    const moment1 = parseField(cyl_moment1);
+    const moment2 = parseField(cyl_moment2);
+    const moment3 = parseField(cyl_moment3);
+    const length1 = parseField(cyl_length1);
+    const length2 = parseField(cyl_length2);
+    const distance = parseField(cyl_distance);
+    const mass2   = parseField(cyl_mass2);
+    const mass3   = parseField(cyl_mass3);
+
+    if ([moment1,moment2,moment3,length1,length2,distance,mass2,mass3].some(v => v === null)) {
+      alert("Некорректные конструктивные параметры Цилиндр.");
+      return;
+    }
+
+    state.cylindricalParams = { moment1,moment2,moment3,length1,length2,distance,mass2,mass3 };
+    cylParamsDlg.close();
+    updateStatus();
+  });
+
+  cylParamsCancelBtn.addEventListener("click", () => cylParamsDlg.close());
+  cylParamsHelpBtn.addEventListener("click", () => {
+    alert("Конструктивные параметры цилиндрического робота:\n" +
+          "моменты 1–3 звеньев, длины 1–2 звеньев, расстояние и массы 2–3 звеньев.\n" +
+          "Это веб-аналог show_cylindrical_params_dialog.");
+  });
+
+    // ===== Цилиндр: ограничения =====
+  const cylLimitsDlg = document.getElementById("cylLimitsDialog");
+  const cylLimitsOkBtn = document.getElementById("cylLimitsOkBtn");
+  const cylLimitsHelpBtn = document.getElementById("cylLimitsHelpBtn");
+  const cylLimitsCancelBtn = document.getElementById("cylLimitsCancelBtn");
+
+  const cyl_q1min = document.getElementById("cyl_q1min");
+  const cyl_q1max = document.getElementById("cyl_q1max");
+  const cyl_a2min = document.getElementById("cyl_a2min");
+  const cyl_a2max = document.getElementById("cyl_a2max");
+  const cyl_q3min = document.getElementById("cyl_q3min");
+  const cyl_q3max = document.getElementById("cyl_q3max");
+  const cyl_zmin  = document.getElementById("cyl_zmin");
+  const cyl_zmax  = document.getElementById("cyl_zmax");
+
+  function openCylindricalLimitsDialog() {
+    const l = state.cylindricalLimits;
+    cyl_q1min.value = l.q1Min ?? "";
+    cyl_q1max.value = l.q1Max ?? "";
+    cyl_a2min.value = l.a2Min ?? "";
+    cyl_a2max.value = l.a2Max ?? "";
+    cyl_q3min.value = l.q3Min ?? "";
+    cyl_q3max.value = l.q3Max ?? "";
+    cyl_zmin.value  = l.zMin  ?? "";
+    cyl_zmax.value  = l.zMax  ?? "";
+    cylLimitsDlg.showModal();
+  }
+
+  cylLimitsOkBtn.addEventListener("click", () => {
+    const q1Min = parseField(cyl_q1min);
+    const q1Max = parseField(cyl_q1max);
+    const a2Min = parseField(cyl_a2min);
+    const a2Max = parseField(cyl_a2max);
+    const q3Min = parseField(cyl_q3min);
+    const q3Max = parseField(cyl_q3max);
+    const zMin  = parseField(cyl_zmin);
+    const zMax  = parseField(cyl_zmax);
+
+    if ([q1Min,q1Max,a2Min,a2Max,q3Min,q3Max,zMin,zMax].some(v => v === null)) {
+      alert("Некорректные ограничения по координатам для Цилиндр.");
+      return;
+    }
+
+    state.cylindricalLimits = { q1Min,q1Max,a2Min,a2Max,q3Min,q3Max,zMin,zMax };
+    cylLimitsDlg.close();
+    updateStatus();
+  });
+
+  cylLimitsCancelBtn.addEventListener("click", () => cylLimitsDlg.close());
+  cylLimitsHelpBtn.addEventListener("click", () => {
+    alert("Ограничения по координатам цилиндрического робота:\n" +
+          "Q1, A2, Q3 и Z (min/max). Веб-аналог show_cylindrical_limits_dialog.");
+  });
+
+
+  // ===== Обновление статусбара =====
+  function updateStatus() {
+    let extra = "";
+    if (state.robotType === "cartesian") {
+      const p = state.cartesianParams;
+      extra = (p.mass1 != null)
+        ? `Декарт: m1=${p.mass1}, m2=${p.mass2}, m3=${p.mass3}, J=${p.moment}`
+        : "Декарт: параметры не заданы";
+    } else if (state.robotType === "scara") {
+      const p = state.scaraParams;
+      extra = (p.moment1 != null)
+        ? `Скара: M1=${p.moment1}, M2=${p.moment2}, M3=${p.moment3}`
+        : "Скара: параметры не заданы";
+    } else if (state.robotType === "cylindrical") {
+      const p = state.cylindricalParams;
+      extra = (p.moment1 != null)
+        ? `Цилиндр: M1=${p.moment1}, M2=${p.moment2}, M3=${p.moment3}`
+        : "Цилиндр: параметры не заданы";
+    }
+
+    document.getElementById("statusRight").textContent =
+      `Тип робота: ${robotTypeLabel()} | Тип движения: ${movementTypeLabel()} | ${extra}`;
+  }
+  updateStatus();
+
+  // ===== Обработчики пунктов меню =====
   const actions = {
-    show_creators_info() { alert("show_creators_info() – здесь показать окно 'Создатели'."); },
-    check_for_update() { alert("check_for_update() – здесь проверка обновлений."); },
+    show_creators_info()      { alert("show_creators_info() – окно 'Создатели'."); },
+    check_for_update()        { alert("check_for_update() – проверка обновлений."); },
 
-    load_data() { alert("load_data() – диалог 'Загрузить данные'."); },
-    save_data() { alert("save_data() – обычное сохранение."); },
-    save_data_as() { alert("save_data_as() – 'Сохранить как'."); },
+    load_data()               { alert("load_data() – диалог 'Загрузить данные'."); },
+    save_data()               { alert("save_data() – обычное сохранение."); },
+    save_data_as()            { alert("save_data_as() – 'Сохранить как'."); },
 
-    // теперь открываем реальные диалоги
-    show_robot_type_dialog() { openRobotTypeDialog(); },
-    show_movement_type_dialog() { openMovementTypeDialog(); },
+    show_robot_type_dialog()  { openRobotTypeDialog(); },
+    show_movement_type_dialog(){ openMovementTypeDialog(); },
 
-    show_cartesian_params_dialog() { alert("Параметры декартового робота."); },
-    show_cartesian_limits_dialog() { alert("Ограничения декартового робота."); },
+    // Декартовый
+    show_cartesian_params_dialog() { openCartesianParamsDialog(); },
+    show_cartesian_limits_dialog() { openCartesianLimitsDialog(); },
 
-    show_cylindrical_params_dialog() { alert("Параметры цилиндрического робота."); },
-    show_cylindrical_limits_dialog() { alert("Ограничения цилиндрического робота."); },
+    // Скара
+    show_scara_params_dialog()    { openScaraParamsDialog(); },
+    show_scara_limits_dialog()    { openScaraLimitsDialog(); },
 
-    show_scara_params_dialog() { alert("Параметры СКАРА."); },
-    show_scara_limits_dialog() { alert("Ограничения СКАРА."); },
+    // Остальные пока-заглушки
+    show_cylindrical_params_dialog() { openCylindricalParamsDialog(); },
+    show_cylindrical_limits_dialog() { openCylindricalLimitsDialog(); },
 
-    show_coler_params_dialog() { alert("Параметры Колер."); },
-    show_coler_limits_dialog() { alert("Ограничения Колер."); },
+    show_coler_params_dialog()       { alert("Колер: параметры ещё не перенесены."); },
+    show_coler_limits_dialog()       { alert("Колер: ограничения ещё не перенесены."); },
 
-    show_motor_params_dialog() { alert("Параметры двигателей."); },
-    show_regulator_params_dialog() { alert("Параметры регуляторов."); },
+    show_motor_params_dialog()   { alert("Параметры двигателей."); },
+    show_regulator_params_dialog(){ alert("Параметры регуляторов."); },
 
-    show_calculator_dialog() { alert("Вычислитель."); },
+    show_calculator_dialog()     { alert("Вычислитель."); },
 
-    show_cyclegram_dialog() { alert("Позиционное движение (цикограмма)."); },
-    show_trajectory_type_dialog() { alert("Контурное движение (тип траектории)."); },
+    show_cyclegram_dialog()      { alert("Позиционное движение (цикограмма)."); },
+    show_trajectory_type_dialog(){ alert("Контурное движение (тип траектории)."); },
 
     show_graph_settings_dialog() { alert("Настройки графика/расчёт графика."); },
-    draw_workspace() { alert("Расчёт и отрисовка рабочей области."); },
+    draw_workspace()             { alert("Расчёт и отрисовка рабочей области."); },
   };
 
   document.getElementById("menuBar").addEventListener("click", (e) => {
@@ -677,6 +1389,8 @@
     }
   });
 </script>
+
+
 
 
 </body>
