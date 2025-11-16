@@ -821,6 +821,112 @@
     </div>
   </dialog>
 
+  <!-- ===== Конструктивные параметры Колер ===== -->
+  <dialog id="colerParamsDialog">
+    <div class="dlg">
+      <div class="dlg-header">
+        Конструктивные параметры Колер
+      </div>
+
+      <div class="dlg-form">
+        <div class="dlg-form-row">
+          <label for="col_moment1">Момент 1-го звена</label>
+          <input id="col_moment1" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_moment2">Момент 2-го звена</label>
+          <input id="col_moment2" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_moment3">Момент 3-го звена</label>
+          <input id="col_moment3" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_length1">Длина 1-го звена</label>
+          <input id="col_length1" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_length2">Длина 2-го звена</label>
+          <input id="col_length2" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_distance">Расстояние</label>
+          <input id="col_distance" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_mass2">Масса 2-го звена</label>
+          <input id="col_mass2" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_mass3">Масса 3-го звена</label>
+          <input id="col_mass3" type="number" step="0.001">
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="colerParamsOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="colerParamsHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="colerParamsCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===== Ограничения по координатам Колер ===== -->
+  <dialog id="colerLimitsDialog">
+    <div class="dlg">
+      <div class="dlg-header">
+        Ограничения по координатам Колер
+      </div>
+
+      <div class="dlg-form">
+        <div class="dlg-form-row">
+          <label for="col_a2min">A1min</label>
+          <input id="col_a2min" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_a2max">A2max</label>
+          <input id="col_a2max" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="col_q1min">Q1min</label>
+          <input id="col_q1min" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_q1max">Q1max</label>
+          <input id="col_q1max" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="col_q3min">Q3min</label>
+          <input id="col_q3min" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_q3max">Q3max</label>
+          <input id="col_q3max" type="number" step="0.001">
+        </div>
+
+        <div class="dlg-form-row">
+          <label for="col_zmin">Zmin</label>
+          <input id="col_zmin" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="col_zmax">Zmax</label>
+          <input id="col_zmax" type="number" step="0.001">
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="colerLimitsOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="colerLimitsHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="colerLimitsCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
 
 
 
@@ -882,6 +988,26 @@
       q3Min: null, q3Max: null,
       zMin:  null, zMax:  null,
     },
+        // Колер – конструктивные параметры
+    colerParams: {
+      moment1: null,
+      moment2: null,
+      moment3: null,
+      length1: null,
+      length2: null,
+      distance: null,
+      mass2: null,
+      mass3: null,
+    },
+
+    // Колер – ограничения
+    colerLimits: {
+      a2Min: null, a2Max: null,
+      q1Min: null, q1Max: null,
+      q3Min: null, q3Max: null,
+      zMin:  null, zMax:  null,
+    },
+
   };
 
   // ===== Время =====
@@ -1315,6 +1441,118 @@
           "Q1, A2, Q3 и Z (min/max). Веб-аналог show_cylindrical_limits_dialog.");
   });
 
+    // ===== Колер: конструктивные параметры =====
+  const colerParamsDlg       = document.getElementById("colerParamsDialog");
+  const colerParamsOkBtn     = document.getElementById("colerParamsOkBtn");
+  const colerParamsHelpBtn   = document.getElementById("colerParamsHelpBtn");
+  const colerParamsCancelBtn = document.getElementById("colerParamsCancelBtn");
+
+  const col_moment1  = document.getElementById("col_moment1");
+  const col_moment2  = document.getElementById("col_moment2");
+  const col_moment3  = document.getElementById("col_moment3");
+  const col_length1  = document.getElementById("col_length1");
+  const col_length2  = document.getElementById("col_length2");
+  const col_distance = document.getElementById("col_distance");
+  const col_mass2    = document.getElementById("col_mass2");
+  const col_mass3    = document.getElementById("col_mass3");
+
+  function openColerParamsDialog() {
+    const p = state.colerParams;
+    col_moment1.value  = p.moment1  ?? "";
+    col_moment2.value  = p.moment2  ?? "";
+    col_moment3.value  = p.moment3  ?? "";
+    col_length1.value  = p.length1  ?? "";
+    col_length2.value  = p.length2  ?? "";
+    col_distance.value = p.distance ?? "";
+    col_mass2.value    = p.mass2    ?? "";
+    col_mass3.value    = p.mass3    ?? "";
+    colerParamsDlg.showModal();
+  }
+
+  colerParamsOkBtn.addEventListener("click", () => {
+    const moment1  = parseField(col_moment1);
+    const moment2  = parseField(col_moment2);
+    const moment3  = parseField(col_moment3);
+    const length1  = parseField(col_length1);
+    const length2  = parseField(col_length2);
+    const distance = parseField(col_distance);
+    const mass2    = parseField(col_mass2);
+    const mass3    = parseField(col_mass3);
+
+    if ([moment1,moment2,moment3,length1,length2,distance,mass2,mass3].some(v => v === null)) {
+      alert("Некорректные конструктивные параметры Колер.");
+      return;
+    }
+
+    state.colerParams = { moment1,moment2,moment3,length1,length2,distance,mass2,mass3 };
+    colerParamsDlg.close();
+    updateStatus();
+  });
+
+  colerParamsCancelBtn.addEventListener("click", () => colerParamsDlg.close());
+
+  colerParamsHelpBtn.addEventListener("click", () => {
+    alert("Конструктивные параметры робота Колер:\n" +
+          "моменты 1–3 звеньев, длины 1–2 звеньев, расстояние и массы 2–3 звеньев.\n" +
+          "Это веб-аналог show_coler_params_dialog.");
+  });
+  // ===== Колер: ограничения =====
+  const colerLimitsDlg       = document.getElementById("colerLimitsDialog");
+  const colerLimitsOkBtn     = document.getElementById("colerLimitsOkBtn");
+  const colerLimitsHelpBtn   = document.getElementById("colerLimitsHelpBtn");
+  const colerLimitsCancelBtn = document.getElementById("colerLimitsCancelBtn");
+
+  const col_a2min = document.getElementById("col_a2min");
+  const col_a2max = document.getElementById("col_a2max");
+  const col_q1min = document.getElementById("col_q1min");
+  const col_q1max = document.getElementById("col_q1max");
+  const col_q3min = document.getElementById("col_q3min");
+  const col_q3max = document.getElementById("col_q3max");
+  const col_zmin  = document.getElementById("col_zmin");
+  const col_zmax  = document.getElementById("col_zmax");
+
+  function openColerLimitsDialog() {
+    const l = state.colerLimits;
+    col_a2min.value = l.a2Min ?? "";
+    col_a2max.value = l.a2Max ?? "";
+    col_q1min.value = l.q1Min ?? "";
+    col_q1max.value = l.q1Max ?? "";
+    col_q3min.value = l.q3Min ?? "";
+    col_q3max.value = l.q3Max ?? "";
+    col_zmin.value  = l.zMin  ?? "";
+    col_zmax.value  = l.zMax  ?? "";
+    colerLimitsDlg.showModal();
+  }
+
+  colerLimitsOkBtn.addEventListener("click", () => {
+    const a2Min = parseField(col_a2min);
+    const a2Max = parseField(col_a2max);
+    const q1Min = parseField(col_q1min);
+    const q1Max = parseField(col_q1max);
+    const q3Min = parseField(col_q3min);
+    const q3Max = parseField(col_q3max);
+    const zMin  = parseField(col_zmin);
+    const zMax  = parseField(col_zmax);
+
+    if ([a2Min,a2Max,q1Min,q1Max,q3Min,q3Max,zMin,zMax].some(v => v === null)) {
+      alert("Некорректные ограничения по координатам для Колер.");
+      return;
+    }
+
+    state.colerLimits = { a2Min,a2Max,q1Min,q1Max,q3Min,q3Max,zMin,zMax };
+    colerLimitsDlg.close();
+    updateStatus();
+  });
+
+  colerLimitsCancelBtn.addEventListener("click", () => colerLimitsDlg.close());
+
+  colerLimitsHelpBtn.addEventListener("click", () => {
+    alert("Ограничения по координатам робота Колер:\n" +
+          "A1/A2, Q1, Q3 и Z (min/max).\n" +
+          "Это веб-аналог show_coler_limits_dialog.");
+  });
+
+
 
   // ===== Обновление статусбара =====
   function updateStatus() {
@@ -1334,7 +1572,13 @@
       extra = (p.moment1 != null)
         ? `Цилиндр: M1=${p.moment1}, M2=${p.moment2}, M3=${p.moment3}`
         : "Цилиндр: параметры не заданы";
-    }
+    } else if (state.robotType === "coler") {
+    const p = state.colerParams;
+    extra = (p.moment1 != null)
+      ? `Колер: M1=${p.moment1}, M2=${p.moment2}, M3=${p.moment3}`
+      : "Колер: параметры не заданы";
+  }
+
 
     document.getElementById("statusRight").textContent =
       `Тип робота: ${robotTypeLabel()} | Тип движения: ${movementTypeLabel()} | ${extra}`;
@@ -1365,8 +1609,8 @@
     show_cylindrical_params_dialog() { openCylindricalParamsDialog(); },
     show_cylindrical_limits_dialog() { openCylindricalLimitsDialog(); },
 
-    show_coler_params_dialog()       { alert("Колер: параметры ещё не перенесены."); },
-    show_coler_limits_dialog()       { alert("Колер: ограничения ещё не перенесены."); },
+    show_coler_params_dialog()       { openColerParamsDialog(); },
+    show_coler_limits_dialog()       { openColerLimitsDialog(); },
 
     show_motor_params_dialog()   { alert("Параметры двигателей."); },
     show_regulator_params_dialog(){ alert("Параметры регуляторов."); },
