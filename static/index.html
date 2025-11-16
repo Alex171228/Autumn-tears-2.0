@@ -1062,6 +1062,43 @@ dialog.dlg-wide-big .dlg-form table td {
     </div>
   </dialog>
 
+    <!-- ===== Вычислитель ===== -->
+  <dialog id="calculatorDialog">
+    <div class="dlg">
+      <div class="dlg-header">
+        Вычислитель
+      </div>
+
+      <div class="dlg-form">
+        <div class="dlg-form-row">
+          <label for="calc_bitDepth">Разрядность</label>
+          <input id="calc_bitDepth" type="number" step="1">
+        </div>
+        <div class="dlg-form-row">
+          <label for="calc_exchangeCycle">Такт обмена</label>
+          <input id="calc_exchangeCycle" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="calc_controlCycle">Такт управления</label>
+          <input id="calc_controlCycle" type="number" step="0.001">
+        </div>
+        <div class="dlg-form-row">
+          <label for="calc_filterConstant">Постоянная фильтра</label>
+          <input id="calc_filterConstant" type="number" step="0.001">
+        </div>
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="calcOkBtn">ОК</button>
+          <button type="button" class="dlg-btn dlg-btn-help" id="calcHelpBtn">Помощь</button>
+          <button type="button" class="dlg-btn dlg-btn-cancel" id="calcCancelBtn">Отменить</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+
 
 <script>
   // ===== Глобальное состояние =====
@@ -1157,6 +1194,14 @@ dialog.dlg-wide-big .dlg-form table td {
       Ki: [null, null, null, null],
       Kd: [null, null, null, null],
     },
+        // Вычислитель
+    calculatorValues: {
+      bitDepth: null,
+      exchangeCycle: null,
+      controlCycle: null,
+      filterConstant: null,
+    },
+
 
   };
 
@@ -1858,6 +1903,58 @@ dialog.dlg-wide-big .dlg-form table td {
           "Это веб-аналог show_regulator_params_dialog.");
   });
 
+    // ===== Вычислитель =====
+  const calcDlg        = document.getElementById("calculatorDialog");
+  const calcOkBtn      = document.getElementById("calcOkBtn");
+  const calcHelpBtn    = document.getElementById("calcHelpBtn");
+  const calcCancelBtn  = document.getElementById("calcCancelBtn");
+
+  const calc_bitDepth       = document.getElementById("calc_bitDepth");
+  const calc_exchangeCycle  = document.getElementById("calc_exchangeCycle");
+  const calc_controlCycle   = document.getElementById("calc_controlCycle");
+  const calc_filterConstant = document.getElementById("calc_filterConstant");
+
+  function openCalculatorDialog() {
+    const c = state.calculatorValues;
+    calc_bitDepth.value       = c.bitDepth       ?? "";
+    calc_exchangeCycle.value  = c.exchangeCycle  ?? "";
+    calc_controlCycle.value   = c.controlCycle   ?? "";
+    calc_filterConstant.value = c.filterConstant ?? "";
+    calcDlg.showModal();
+  }
+
+  calcOkBtn.addEventListener("click", () => {
+    const bitDepth       = parseField(calc_bitDepth);
+    const exchangeCycle  = parseField(calc_exchangeCycle);
+    const controlCycle   = parseField(calc_controlCycle);
+    const filterConstant = parseField(calc_filterConstant);
+
+    if ([bitDepth, exchangeCycle, controlCycle, filterConstant].some(v => v === null)) {
+      alert("Некорректные значения вычислителя. Проверьте введённые данные.");
+      return;
+    }
+
+    state.calculatorValues = {
+      bitDepth,
+      exchangeCycle,
+      controlCycle,
+      filterConstant,
+    };
+
+    calcDlg.close();
+    updateStatus();
+  });
+
+  calcCancelBtn.addEventListener("click", () => calcDlg.close());
+
+  calcHelpBtn.addEventListener("click", () => {
+    alert("Вычислитель:\n" +
+          "• Разрядность АЦП/вычислителя\n" +
+          "• Такт обмена\n" +
+          "• Такт управления\n" +
+          "• Постоянная фильтра\n\n" +
+          "Полный аналог окна show_calculator_dialog в PyQt.");
+  });
 
 
   // ===== Обновление статусбара =====
@@ -1925,7 +2022,7 @@ const mp = state.motorParams;
     show_regulator_params_dialog()  { openRegulatorParamsDialog(); },
 
 
-    show_calculator_dialog()     { alert("Вычислитель."); },
+    show_calculator_dialog() { openCalculatorDialog(); },
 
     show_cyclegram_dialog()      { alert("Позиционное движение (цикограмма)."); },
     show_trajectory_type_dialog(){ alert("Контурное движение (тип траектории)."); },
