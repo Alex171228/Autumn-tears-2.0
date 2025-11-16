@@ -435,7 +435,10 @@ dialog.dlg-graph .dlg {
   font-size: 13px;
   font-weight: bold;
 }
-
+dialog.dlg-creators .dlg {
+  width: 450px;
+  max-width: 450px;
+}
 </style>
 
 <body>
@@ -1441,6 +1444,43 @@ dialog.dlg-graph .dlg {
       </div>
     </div>
   </dialog>
+
+    <!-- ===== Окно "Создатели" ===== -->
+  <dialog id="creatorsDialog" class="dlg-creators">
+    <div class="dlg">
+      <div class="dlg-header">
+        Создатели
+      </div>
+
+      <div class="dlg-form" style="text-align:center;">
+        <div style="font-size:22px; font-weight:bold; margin-bottom:10px;">
+          Создатели
+        </div>
+
+        <div style="font-size:18px; margin-bottom:10px;">
+          Руководитель проекта: Шишков А.Д.
+        </div>
+
+        <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">
+          Бюджет разработки
+        </div>
+
+        <!-- картинка -->
+        <img src="/static/ohota.jpg"
+             alt="Создатели"
+             style="max-width:90%; border-radius:8px; margin-top:10px;">
+      </div>
+
+      <div class="dlg-footer">
+        <div class="dlg-footer-row">
+          <button type="button" class="dlg-btn dlg-btn-ok" id="creatorsCloseBtn">
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
 
 
 <script>
@@ -2642,6 +2682,16 @@ dialog.dlg-graph .dlg {
       "Это веб-аналог show_graph_settings_dialog из PyQt."
     );
   });
+    // ===== Окно создателей =====
+  const creatorsDlg      = document.getElementById("creatorsDialog");
+  const creatorsCloseBtn = document.getElementById("creatorsCloseBtn");
+
+  function openCreatorsDialog() {
+    creatorsDlg.showModal();
+  }
+
+  creatorsCloseBtn.addEventListener("click", () => creatorsDlg.close());
+
 
 
 
@@ -2684,7 +2734,7 @@ dialog.dlg-graph .dlg {
 
   // ===== Обработчики пунктов меню =====
   const actions = {
-    show_creators_info()      { alert("show_creators_info() – окно 'Создатели'."); },
+    show_creators_info() { openCreatorsDialog(); },
     check_for_update()        { alert("check_for_update() – проверка обновлений."); },
 
     load_data()               { alert("load_data() – диалог 'Загрузить данные'."); },
