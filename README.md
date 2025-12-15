@@ -153,7 +153,7 @@
 #### 4.3.1. Условия эксплуатации технических средств
 
 **Серверная часть:**
-- Операционная система: Windows 10/11, Linux, macOS
+- Операционная система: Windows 10/11, Ubuntu 24.04.3 (и другие дистрибутивы Linux), macOS
 - Процессор: не менее 2 ядер, частота не менее 2 ГГц
 - Оперативная память: не менее 2 ГБ
 - Свободное место на диске: не менее 500 МБ
@@ -400,7 +400,7 @@
 - Выполнены все требования разделов 4-5 настоящего технического задания
 - Программа успешно прошла все виды испытаний
 - Документация соответствует требованиям раздела 5
-- Программа протестирована на Windows 11 и совместимых системах
+- Программа протестирована на Windows 11, Ubuntu 24.04.3 и совместимых системах
 
 ---
 
@@ -503,6 +503,247 @@ Frontend будет доступен по адресу: http://127.0.0.1:5173/
 ### Б.7. Быстрый запуск (Windows)
 
 Двойной клик по файлу `start-all.bat` — запустит оба сервера в отдельных окнах.
+
+### Б.8. Установка и запуск на Ubuntu 24.04.3
+
+#### Б.8.1. Обновление системы
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+```
+
+#### Б.8.2. Установка Python 3.10+
+
+Ubuntu 24.04.3 по умолчанию включает Python 3.12. Проверьте версию:
+
+```bash
+python3 --version
+```
+
+Если Python не установлен или версия ниже 3.10, установите:
+
+```bash
+sudo apt install python3 python3-pip python3-venv -y
+```
+
+#### Б.8.3. Установка Node.js 18+
+
+Установите Node.js через NodeSource:
+
+```bash
+# Установка curl (если не установлен)
+sudo apt install curl -y
+
+# Добавление репозитория NodeSource
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+
+# Установка Node.js
+sudo apt install -y nodejs
+
+# Проверка версий
+node --version
+npm --version
+```
+
+Альтернативный способ через nvm (Node Version Manager):
+
+```bash
+# Установка nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Перезагрузка терминала или выполнение:
+source ~/.bashrc
+
+# Установка Node.js 20
+nvm install 20
+nvm use 20
+```
+
+#### Б.8.4. Установка Git (если не установлен)
+
+```bash
+sudo apt install git -y
+```
+
+#### Б.8.5. Клонирование репозитория
+
+```bash
+git clone https://github.com/Alex171228/Autumn-tears-2.0.git
+cd Autumn-tears-2.0
+```
+
+#### Б.8.6. Создание виртуального окружения Python
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+#### Б.8.7. Установка Python зависимостей
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+#### Б.8.8. Установка Node.js зависимостей
+
+```bash
+npm install
+```
+
+#### Б.8.9. Настройка переменных окружения (опционально)
+
+Для работы виджета погоды создайте файл `.env`:
+
+```bash
+nano .env
+```
+
+Добавьте в файл:
+
+```env
+OPENWEATHER_API_KEY=your_api_key_here
+WEATHER_CITY=Moscow
+SECRET_KEY=your-secret-key-change-in-production
+```
+
+Сохраните файл (Ctrl+O, Enter, Ctrl+X).
+
+#### Б.8.10. Запуск приложения
+
+**Терминал 1 — Backend (FastAPI):**
+
+```bash
+cd ~/Autumn-tears-2.0
+source venv/bin/activate
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+
+**Терминал 2 — Frontend (Vite):**
+
+Откройте новый терминал:
+
+```bash
+cd ~/Autumn-tears-2.0
+npm run dev
+```
+
+#### Б.8.11. Создание скриптов для удобного запуска (опционально)
+
+Создайте скрипт для запуска backend:
+
+```bash
+nano start-backend.sh
+```
+
+Добавьте содержимое:
+
+```bash
+#!/bin/bash
+cd "$(dirname "$0")"
+source venv/bin/activate
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Сделайте скрипт исполняемым:
+
+```bash
+chmod +x start-backend.sh
+```
+
+Создайте скрипт для запуска frontend:
+
+```bash
+nano start-frontend.sh
+```
+
+Добавьте содержимое:
+
+```bash
+#!/bin/bash
+cd "$(dirname "$0")"
+npm run dev
+```
+
+Сделайте скрипт исполняемым:
+
+```bash
+chmod +x start-frontend.sh
+```
+
+Создайте скрипт для запуска обоих серверов:
+
+```bash
+nano start-all.sh
+```
+
+Добавьте содержимое:
+
+```bash
+#!/bin/bash
+cd "$(dirname "$0")"
+
+# Запуск backend в фоне
+gnome-terminal -- bash -c "source venv/bin/activate && uvicorn main:app --reload --host 127.0.0.1 --port 8000; exec bash"
+
+# Небольшая задержка
+sleep 2
+
+# Запуск frontend в новом окне
+gnome-terminal -- bash -c "npm run dev; exec bash"
+
+echo "Серверы запущены в отдельных окнах!"
+echo "Backend: http://127.0.0.1:8000"
+echo "Frontend: http://127.0.0.1:5173"
+```
+
+Сделайте скрипт исполняемым:
+
+```bash
+chmod +x start-all.sh
+```
+
+> **Примечание:** Скрипт `start-all.sh` использует `gnome-terminal`. Если используется другой терминал (например, KDE), замените `gnome-terminal` на `konsole` или `xterm`.
+
+#### Б.8.12. Открытие приложения
+
+Откройте в браузере: **http://127.0.0.1:5173/**
+
+#### Б.8.13. Остановка серверов
+
+Нажмите `Ctrl+C` в каждом терминале или закройте окна терминалов.
+
+#### Б.8.14. Устранение возможных проблем
+
+**Проблема: порт уже занят**
+
+```bash
+# Проверка занятых портов
+sudo lsof -i :8000
+sudo lsof -i :5173
+
+# Остановка процесса (замените PID на реальный)
+sudo kill -9 PID
+```
+
+**Проблема: права доступа**
+
+```bash
+# Если возникают проблемы с правами, используйте sudo для установки пакетов
+sudo apt install python3-pip nodejs npm
+```
+
+**Проблема: модули Python не найдены**
+
+```bash
+# Убедитесь, что виртуальное окружение активировано
+source venv/bin/activate
+
+# Переустановите зависимости
+pip install -r requirements.txt
+```
 
 ---
 
@@ -616,4 +857,4 @@ Frontend будет доступен по адресу: http://127.0.0.1:5173/
 
 **Дата составления:** 2025  
 **Версия:** 2.0  
-**Статус:** Протестировано на Windows 11
+**Статус:** Протестировано на Windows 11 и Ubuntu 24.04.3
