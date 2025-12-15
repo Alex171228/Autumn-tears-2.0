@@ -1,6 +1,14 @@
 fastapi[all]==0.115.0
+pydantic>=2.0.0
 uvicorn[standard]==0.30.6
 requests==2.32.3
 pandas==2.2.3
 matplotlib==3.9.2
 python-dotenv==1.0.1
+sqlalchemy==2.0.23
+bcrypt==4.1.2
+python-jose[cryptography]==3.3.0
+python-multipart>=0.0.7
+slowapi==0.1.9
+scipy>=1.11.0
+numpy>=1.24.0
