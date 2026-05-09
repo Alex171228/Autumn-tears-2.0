@@ -1,7 +1,5 @@
 @echo off
 cd /d "%~dp0"
-call venv\Scripts\activate
-echo Запуск Backend сервера (FastAPI)...
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
+echo Starting backend services via Docker Compose...
+docker compose up --build gateway-service auth-service simulation-service config-service admin-service mongo redis
 pause
-

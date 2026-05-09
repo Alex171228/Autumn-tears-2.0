@@ -241,6 +241,7 @@ function App() {
   // Результаты расчёта траектории
   const [calculationResult, setCalculationResult] = useState(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [activeMainTab, setActiveMainTab] = useState('tabTrajectory');
   
   // Логи
   const [logs, setLogs] = useState([]);
@@ -468,6 +469,7 @@ function App() {
     show_trajectory_type_dialog: () => openDialog('trajectoryType'),
     show_graph_settings_dialog: () => openDialog('graphSettings'),
     draw_workspace: async () => {
+      setActiveMainTab('tabWorkspace');
       try {
         await calculateTrajectory();
       } catch (error) {
@@ -475,6 +477,7 @@ function App() {
       }
     },
     calculate_trajectory: async () => {
+      setActiveMainTab('tabTrajectory');
       try {
         await calculateTrajectory();
       } catch (error) {
@@ -513,6 +516,8 @@ function App() {
       closeDialog, 
       user, 
       handleLogin,
+      activeMainTab,
+      setActiveMainTab,
       calculationResult,
       setCalculationResult,
       isCalculating,

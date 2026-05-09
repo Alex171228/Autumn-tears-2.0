@@ -34,11 +34,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Database
+# Database (legacy SQLite — no longer used)
 users.db
 *.db
 *.sqlite
 *.sqlite3
+
+# Docker volumes / data
+mongo_data/
+redis_data/
 
 # Static files (build output)
 static/

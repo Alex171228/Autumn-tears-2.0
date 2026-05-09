@@ -5,8 +5,8 @@ import * as robotApi from '../services/robotApi';
 const { GRAPH_TYPE_TO_API, GRAPH_TYPE_LABELS, GRAPH_TYPE_GROUPS } = robotApi;
 
 function Tabs() {
-  const { state, calculationResult, setCalculationResult, addLog, actions, calculateTrajectory, isCalculating } = useAppState();
-  const [activeTab, setActiveTab] = useState('tabTrajectory');
+  const { state, calculationResult, actions, calculateTrajectory, isCalculating, activeMainTab, setActiveMainTab } = useAppState();
+  const activeTab = activeMainTab;
   const [isReady, setIsReady] = useState(false);
   
   // Тип графика берём из настроек графика (graphSettings.coordType)
@@ -30,8 +30,8 @@ function Tabs() {
   ];
 
   const handleTabClick = useCallback((tabId) => {
-    setActiveTab(tabId);
-  }, []);
+    setActiveMainTab(tabId);
+  }, [setActiveMainTab]);
 
   // Загрузить график (только изображение)
   const loadPlot = useCallback(async (graphType) => {
@@ -379,6 +379,7 @@ function Tabs() {
           <h3>Лог</h3>
           <LogViewer />
         </section>
+
       </div>
     </>
   );

@@ -1,6 +1,5 @@
 @echo off
 cd /d "%~dp0"
-echo Запуск Frontend сервера (Vite)...
-npm run dev
+echo Starting frontend container via Docker Compose...
+docker compose up --build frontend
 pause
-

@@ -7,23 +7,23 @@ import secrets
 import logging
 
 from fastapi import FastAPI, Depends, HTTPException, status, Request, Response
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from sqlalchemy.orm import Session
 from pydantic import BaseModel, field_validator
 from typing import Optional, Dict
+from bson import ObjectId
 import re
 import requests
 import bcrypt
 from jose import JWTError, jwt
 from dotenv import load_dotenv
 
-from database import init_db, get_db, User, SavedConfig, create_admin_user
+from database import init_db, get_db, create_admin_user
+import redis_client
 import json
 
 # Настройка логирования безопасности
@@ -250,9 +250,6 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
 app.add_middleware(CacheControlMiddleware)
 
 
-os.makedirs("static", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
 # Инициализация БД при запуске
 init_db()
 
@@ -308,7 +305,7 @@ class Token(BaseModel):
 
 class UserResponse(BaseModel):
     username: str
-    email: str = None
+    email: Optional[str] = None
     is_admin: bool = False
 
 
@@ -334,7 +331,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db=Depends(get_db)
 ):
     """Получить текущего пользователя из JWT токена"""
     token = credentials.credentials
@@ -357,8 +354,7 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверные учетные данные"
         )
-    # Используем ORM для защиты от SQL инъекций
-    user = db.query(User).filter(User.username == username).first()
+    user = db.users.find_one({"username": username})
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -374,17 +370,13 @@ def healthz():
 
 @app.post("/api/register", response_model=Token)
 @limiter.limit("5/minute")
-def register(request: Request, user_data: UserRegister, db: Session = Depends(get_db)):
+def register(request: Request, user_data: UserRegister, db=Depends(get_db)):
     """Регистрация нового пользователя"""
     try:
-        # Валидация уже выполнена через Pydantic validators
         username = user_data.username.strip()
         
-        # Дополнительная проверка на SQL инъекции (хотя SQLAlchemy уже защищает)
-        # Используем параметризованные запросы через ORM
-        
-        # Проверяем, существует ли пользователь (используем ORM для защиты от SQL инъекций)
-        db_user = db.query(User).filter(User.username == username).first()
+        # Проверяем, существует ли пользователь
+        db_user = db.users.find_one({"username": username})
         if db_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -394,33 +386,33 @@ def register(request: Request, user_data: UserRegister, db: Session = Depends(ge
         # Хешируем пароль
         hashed_password = hash_password(user_data.password)
         
-        # Создаем пользователя (без email)
-        db_user = User(
-            username=username,
-            email=None,  # Email больше не используется
-            hashed_password=hashed_password
-        )
-        db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
+        # Создаем пользователя
+        from datetime import datetime as _dt
+        user_doc = {
+            "username": username,
+            "email": None,
+            "hashed_password": hashed_password,
+            "is_admin": False,
+            "created_at": _dt.utcnow(),
+        }
+        result = db.users.insert_one(user_doc)
+        user_doc["_id"] = result.inserted_id
         
         # Создаем токен
-        access_token = create_access_token(data={"sub": db_user.username})
+        access_token = create_access_token(data={"sub": username})
         
         return {
             "access_token": access_token,
             "token_type": "bearer",
-            "username": db_user.username,
-            "is_admin": db_user.is_admin
+            "username": username,
+            "is_admin": False
         }
     except HTTPException:
         raise
     except Exception as e:
-        # Логируем ошибку для отладки (но не раскрываем детали пользователю)
         import traceback
         print(f"Ошибка при регистрации: {e}")
         print(traceback.format_exc())
-        # Не раскрываем детали ошибки для безопасности
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Произошла ошибка при регистрации. Попробуйте позже."
@@ -429,7 +421,7 @@ def register(request: Request, user_data: UserRegister, db: Session = Depends(ge
 
 @app.post("/api/login", response_model=Token)
 @limiter.limit("10/minute")
-def login(request: Request, user_data: UserLogin, db: Session = Depends(get_db)):
+def login(request: Request, user_data: UserLogin, db=Depends(get_db)):
     """Вход пользователя"""
     client_ip = get_remote_address(request)
     username = user_data.username.strip() if user_data.username else ""
@@ -450,8 +442,8 @@ def login(request: Request, user_data: UserLogin, db: Session = Depends(get_db))
             detail="Неверное имя пользователя или пароль"
         )
     
-    # Находим пользователя (используем ORM для защиты от SQL инъекций)
-    db_user = db.query(User).filter(User.username == username).first()
+    # Находим пользователя
+    db_user = db.users.find_one({"username": username})
     if not db_user:
         brute_force_protection.check_and_record_attempt(client_ip, username, False)
         raise HTTPException(
@@ -459,11 +451,10 @@ def login(request: Request, user_data: UserLogin, db: Session = Depends(get_db))
             detail="Неверное имя пользователя или пароль"
         )
     
-    # Проверяем пароль (постоянное время выполнения для защиты от timing attacks)
-    if not verify_password(user_data.password, db_user.hashed_password):
-        # Для админа - более строгая защита
+    # Проверяем пароль
+    if not verify_password(user_data.password, db_user["hashed_password"]):
         brute_force_protection.check_and_record_attempt(
-            client_ip, username, False, is_admin_attempt=db_user.is_admin
+            client_ip, username, False, is_admin_attempt=db_user.get("is_admin", False)
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -473,33 +464,35 @@ def login(request: Request, user_data: UserLogin, db: Session = Depends(get_db))
     # Успешный вход
     brute_force_protection.check_and_record_attempt(client_ip, username, True)
     
+    is_admin = db_user.get("is_admin", False)
+    
     # Создаем токен (для админа - короче срок действия)
-    expire_minutes = ADMIN_TOKEN_EXPIRE_MINUTES if db_user.is_admin else ACCESS_TOKEN_EXPIRE_MINUTES
+    expire_minutes = ADMIN_TOKEN_EXPIRE_MINUTES if is_admin else ACCESS_TOKEN_EXPIRE_MINUTES
     access_token = create_access_token(
-        data={"sub": db_user.username, "is_admin": db_user.is_admin},
+        data={"sub": db_user["username"], "is_admin": is_admin},
         expires_delta=timedelta(minutes=expire_minutes)
     )
     
     # Для админа создаём сессию с привязкой к IP
-    if db_user.is_admin:
+    if is_admin:
         user_agent = request.headers.get("user-agent", "unknown")
         admin_session_manager.create_session(access_token, client_ip, user_agent, username)
     
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "username": db_user.username,
-        "is_admin": db_user.is_admin
+        "username": db_user["username"],
+        "is_admin": is_admin
     }
 
 
 @app.get("/api/me", response_model=UserResponse)
-def get_current_user_info(current_user: User = Depends(get_current_user)):
+def get_current_user_info(current_user: dict = Depends(get_current_user)):
     """Получить информацию о текущем пользователе"""
     return {
-        "username": current_user.username,
-        "email": current_user.email,
-        "is_admin": current_user.is_admin
+        "username": current_user["username"],
+        "email": current_user.get("email"),
+        "is_admin": current_user.get("is_admin", False)
     }
 
 
@@ -561,15 +554,18 @@ from models import (
     TrajectoryData, ElectricalData, MechanicalData
 )
 
-# Глобальное хранилище калькуляторов для сессий (в продакшене использовать Redis)
-robot_calculators: dict = {}
-
-
 def get_calculator(session_id: str = "default") -> TrajectoryCalculator:
-    """Получить или создать калькулятор для сессии"""
-    if session_id not in robot_calculators:
-        robot_calculators[session_id] = TrajectoryCalculator()
-    return robot_calculators[session_id]
+    """Получить или создать калькулятор для сессии (из Redis)"""
+    calc = redis_client.load_calculator(session_id)
+    if calc is None:
+        calc = TrajectoryCalculator()
+        redis_client.save_calculator(session_id, calc)
+    return calc
+
+
+def save_calculator(session_id: str, calc: TrajectoryCalculator) -> None:
+    """Сохранить калькулятор обратно в Redis после изменений"""
+    redis_client.save_calculator(session_id, calc)
 
 
 @app.post("/api/robot/configure", response_model=StatusResponse)
@@ -672,6 +668,7 @@ def configure_robot(config: FullRobotConfig, session_id: str = "default"):
         calc.state.masscol_2 = config.masscol_2
         calc.state.masscol_3 = config.masscol_3
         
+        save_calculator(session_id, calc)
         return {"success": True, "message": "Робот успешно сконфигурирован"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -682,6 +679,7 @@ def set_robot_type(robot_type: RobotType, session_id: str = "default"):
     """Установить тип робота"""
     calc = get_calculator(session_id)
     calc.state.robot_type = robot_type.value
+    save_calculator(session_id, calc)
     return {"success": True, "message": f"Тип робота установлен: {robot_type.value}"}
 
 
@@ -695,6 +693,7 @@ def set_cyclogram(data: CyclogramRequest, session_id: str = "default"):
     calc.state.q3 = data.q3 or [0] * len(data.t)
     calc.state.q4 = data.q4 or [0] * len(data.t)
     calc.state.type_of_control = data.type_of_control.value
+    save_calculator(session_id, calc)
     return {"success": True, "message": f"Циклограмма установлена ({len(data.t)} точек)"}
 
 
@@ -705,6 +704,7 @@ def set_pid(data: PIDRequest, session_id: str = "default"):
     calc.state.Kp = data.Kp
     calc.state.Ki = data.Ki
     calc.state.Kd = data.Kd
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Параметры ПИД установлены"}
 
 
@@ -719,6 +719,7 @@ def set_motor_params(data: MotorParamsRequest, session_id: str = "default"):
     calc.state.Ce = data.Ce
     calc.state.Ra = data.Ra
     calc.state.Cm = data.Cm
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Параметры двигателей установлены"}
 
 
@@ -734,6 +735,7 @@ def set_cartesian_limits(data: CartesianLimitsRequest, session_id: str = "defaul
     calc.state.z_max = data.z_max
     calc.state.q_min = data.q_min
     calc.state.q_max = data.q_max
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Ограничения декартового робота установлены"}
 
 
@@ -745,6 +747,7 @@ def set_cartesian_params(data: CartesianParamsRequest, session_id: str = "defaul
     calc.state.massd_2 = data.massd_2
     calc.state.massd_3 = data.massd_3
     calc.state.momentd_1 = data.momentd_1
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Параметры декартового робота установлены"}
 
 
@@ -760,6 +763,7 @@ def set_scara_limits(data: ScaraLimitsRequest, session_id: str = "default"):
     calc.state.q3s_max = data.q3s_max
     calc.state.zs_min = data.zs_min
     calc.state.zs_max = data.zs_max
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Ограничения SCARA робота установлены"}
 
 
@@ -775,6 +779,7 @@ def set_scara_params(data: ScaraParamsRequest, session_id: str = "default"):
     calc.state.distance = data.distance
     calc.state.masss_2 = data.masss_2
     calc.state.masss_3 = data.masss_3
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Параметры SCARA робота установлены"}
 
 
@@ -790,6 +795,7 @@ def set_cylindrical_limits(data: CylindricalLimitsRequest, session_id: str = "de
     calc.state.q3c_max = data.q3c_max
     calc.state.zc_min = data.zc_min
     calc.state.zc_max = data.zc_max
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Ограничения цилиндрического робота установлены"}
 
 
@@ -805,6 +811,7 @@ def set_cylindrical_params(data: CylindricalParamsRequest, session_id: str = "de
     calc.state.distancec = data.distancec
     calc.state.massc_2 = data.massc_2
     calc.state.massc_3 = data.massc_3
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Параметры цилиндрического робота установлены"}
 
 
@@ -820,6 +827,7 @@ def set_coler_limits(data: ColerLimitsRequest, session_id: str = "default"):
     calc.state.q3col_max = data.q3col_max
     calc.state.zcol_min = data.zcol_min
     calc.state.zcol_max = data.zcol_max
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Ограничения робота Колер установлены"}
 
 
@@ -835,6 +843,7 @@ def set_coler_params(data: ColerParamsRequest, session_id: str = "default"):
     calc.state.distancecol = data.distancecol
     calc.state.masscol_2 = data.masscol_2
     calc.state.masscol_3 = data.masscol_3
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Параметры робота Колер установлены"}
 
 
@@ -853,6 +862,7 @@ def set_line_contour(data: LineContourRequest, session_id: str = "default"):
     calc.create_contour_line(data.x1, data.x2, data.y1, data.y2)
     calc.reverse_coordinate_transform()
     
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Линейный контур установлен"}
 
 
@@ -870,6 +880,7 @@ def set_circle_contour(data: CircleContourRequest, session_id: str = "default"):
     calc.create_contour_circle(data.x, data.y, data.radius)
     calc.reverse_coordinate_transform()
     
+    save_calculator(session_id, calc)
     return {"success": True, "message": "Круговой контур установлен"}
 
 
@@ -879,6 +890,7 @@ def set_spline(data: SplineRequest, session_id: str = "default"):
     calc = get_calculator(session_id)
     calc.state.spline = data.enabled
     calc.state.num_splain_dots = data.num_dots
+    save_calculator(session_id, calc)
     return {"success": True, "message": f"Сплайн {'включен' if data.enabled else 'выключен'}"}
 
 
@@ -913,6 +925,9 @@ def calculate_trajectory(session_id: str = "default"):
         # Получаем сводку
         summary = calc.get_results_summary()
         
+        # Сохраняем результаты расчёта обратно в Redis
+        save_calculator(session_id, calc)
+        
         return {
             "success": True,
             "robot_type": summary['robot_type'],
@@ -939,6 +954,7 @@ def get_plot(plot_type: PlotType, session_id: str = "default"):
         if not calc.output_time_array:
             calc.calculate_trajectory()
             calc.coordinate_transform()
+            save_calculator(session_id, calc)
         
         image_base64 = calc.generate_plot(plot_type.value)
         
@@ -1012,6 +1028,7 @@ def get_all_data(session_id: str = "default"):
         if not calc.output_time_array:
             calc.calculate_trajectory()
             calc.coordinate_transform()
+            save_calculator(session_id, calc)
         
         s = calc.state
         
@@ -1084,8 +1101,8 @@ def get_all_data(session_id: str = "default"):
 @app.delete("/api/robot/session/{session_id}")
 def delete_session(session_id: str):
     """Удалить сессию расчёта"""
-    if session_id in robot_calculators:
-        del robot_calculators[session_id]
+    deleted = redis_client.delete_calculator(session_id)
+    if deleted:
         return {"success": True, "message": "Сессия удалена"}
     return {"success": False, "message": "Сессия не найдена"}
 
@@ -1616,7 +1633,7 @@ class UpdateConfigRequest(BaseModel):
 
 class SavedConfigResponse(BaseModel):
     """Ответ с данными конфигурации"""
-    id: int
+    id: str
     name: str
     created_at: str
     updated_at: str
@@ -1624,7 +1641,7 @@ class SavedConfigResponse(BaseModel):
 
 class SavedConfigDetailResponse(BaseModel):
     """Детальный ответ с данными конфигурации"""
-    id: int
+    id: str
     name: str
     config_data: dict
     created_at: str
@@ -1633,20 +1650,20 @@ class SavedConfigDetailResponse(BaseModel):
 
 @app.get("/api/configs", response_model=list)
 def get_user_configs(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_db)
 ):
     """Получить список сохранённых конфигураций пользователя"""
-    configs = db.query(SavedConfig).filter(
-        SavedConfig.user_id == current_user.id
-    ).order_by(SavedConfig.updated_at.desc()).all()
+    configs = list(db.saved_configs.find(
+        {"user_id": str(current_user["_id"])}
+    ).sort("updated_at", -1))
     
     return [
         {
-            "id": c.id,
-            "name": c.name,
-            "created_at": c.created_at.isoformat(),
-            "updated_at": c.updated_at.isoformat(),
+            "id": str(c["_id"]),
+            "name": c["name"],
+            "created_at": c["created_at"].isoformat(),
+            "updated_at": c["updated_at"].isoformat(),
         }
         for c in configs
     ]
@@ -1654,15 +1671,20 @@ def get_user_configs(
 
 @app.get("/api/configs/{config_id}")
 def get_config(
-    config_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    config_id: str,
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_db)
 ):
     """Получить конфигурацию по ID"""
-    config = db.query(SavedConfig).filter(
-        SavedConfig.id == config_id,
-        SavedConfig.user_id == current_user.id
-    ).first()
+    try:
+        oid = ObjectId(config_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный ID конфигурации")
+    
+    config = db.saved_configs.find_one({
+        "_id": oid,
+        "user_id": str(current_user["_id"])
+    })
     
     if not config:
         raise HTTPException(
@@ -1671,39 +1693,39 @@ def get_config(
         )
     
     return {
-        "id": config.id,
-        "name": config.name,
-        "config_data": json.loads(config.config_data),
-        "created_at": config.created_at.isoformat(),
-        "updated_at": config.updated_at.isoformat(),
+        "id": str(config["_id"]),
+        "name": config["name"],
+        "config_data": config["config_data"],
+        "created_at": config["created_at"].isoformat(),
+        "updated_at": config["updated_at"].isoformat(),
     }
 
 
 @app.post("/api/configs")
 def save_config(
     data: SaveConfigRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_db)
 ):
     """Сохранить новую конфигурацию"""
     try:
-        config = SavedConfig(
-            user_id=current_user.id,
-            name=data.name.strip(),
-            config_data=json.dumps(data.config_data, ensure_ascii=False)
-        )
-        db.add(config)
-        db.commit()
-        db.refresh(config)
+        now = datetime.utcnow()
+        config_doc = {
+            "user_id": str(current_user["_id"]),
+            "name": data.name.strip(),
+            "config_data": data.config_data,  # Нативный BSON-документ
+            "created_at": now,
+            "updated_at": now,
+        }
+        result = db.saved_configs.insert_one(config_doc)
         
         return {
             "success": True,
             "message": "Конфигурация сохранена",
-            "id": config.id,
-            "name": config.name,
+            "id": str(result.inserted_id),
+            "name": config_doc["name"],
         }
     except Exception as e:
-        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при сохранении: {str(e)}"
@@ -1712,16 +1734,21 @@ def save_config(
 
 @app.put("/api/configs/{config_id}")
 def update_config(
-    config_id: int,
+    config_id: str,
     data: UpdateConfigRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_db)
 ):
     """Обновить существующую конфигурацию"""
-    config = db.query(SavedConfig).filter(
-        SavedConfig.id == config_id,
-        SavedConfig.user_id == current_user.id
-    ).first()
+    try:
+        oid = ObjectId(config_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный ID конфигурации")
+    
+    config = db.saved_configs.find_one({
+        "_id": oid,
+        "user_id": str(current_user["_id"])
+    })
     
     if not config:
         raise HTTPException(
@@ -1730,22 +1757,21 @@ def update_config(
         )
     
     try:
+        update_fields = {"updated_at": datetime.utcnow()}
         if data.name is not None:
-            config.name = data.name.strip()
+            update_fields["name"] = data.name.strip()
         if data.config_data is not None:
-            config.config_data = json.dumps(data.config_data, ensure_ascii=False)
+            update_fields["config_data"] = data.config_data
         
-        config.updated_at = datetime.utcnow()
-        db.commit()
+        db.saved_configs.update_one({"_id": oid}, {"$set": update_fields})
         
         return {
             "success": True,
             "message": "Конфигурация обновлена",
-            "id": config.id,
-            "name": config.name,
+            "id": config_id,
+            "name": update_fields.get("name", config["name"]),
         }
     except Exception as e:
-        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при обновлении: {str(e)}"
@@ -1754,45 +1780,40 @@ def update_config(
 
 @app.delete("/api/configs/{config_id}")
 def delete_config(
-    config_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    config_id: str,
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_db)
 ):
     """Удалить конфигурацию"""
-    config = db.query(SavedConfig).filter(
-        SavedConfig.id == config_id,
-        SavedConfig.user_id == current_user.id
-    ).first()
+    try:
+        oid = ObjectId(config_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный ID конфигурации")
     
-    if not config:
+    result = db.saved_configs.delete_one({
+        "_id": oid,
+        "user_id": str(current_user["_id"])
+    })
+    
+    if result.deleted_count == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Конфигурация не найдена"
         )
     
-    try:
-        db.delete(config)
-        db.commit()
-        
-        return {
-            "success": True,
-            "message": "Конфигурация удалена"
-        }
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Ошибка при удалении: {str(e)}"
-        )
+    return {
+        "success": True,
+        "message": "Конфигурация удалена"
+    }
 
 
 # =====================================================
 # API для администратора
 # =====================================================
 
-def require_admin(current_user: User = Depends(get_current_user)):
+def require_admin(current_user: dict = Depends(get_current_user)):
     """Проверка что пользователь - администратор"""
-    if not current_user.is_admin:
+    if not current_user.get("is_admin", False):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Доступ запрещён. Требуются права администратора."
@@ -1803,8 +1824,8 @@ def require_admin(current_user: User = Depends(get_current_user)):
 async def require_admin_with_session(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-) -> User:
+    db=Depends(get_db)
+) -> dict:
     """Строгая проверка админа с валидацией сессии и IP"""
     token = credentials.credentials
     client_ip = get_remote_address(request)
@@ -1820,8 +1841,8 @@ async def require_admin_with_session(
         raise HTTPException(status_code=401, detail="Недействительный токен")
     
     # Получаем пользователя
-    user = db.query(User).filter(User.username == username).first()
-    if not user or not user.is_admin:
+    user = db.users.find_one({"username": username})
+    if not user or not user.get("is_admin", False):
         security_logger.warning(f"Admin access denied: user={username}, IP={client_ip}")
         raise HTTPException(status_code=403, detail="Доступ запрещён")
     
@@ -1840,48 +1861,56 @@ async def require_admin_with_session(
 @app.get("/api/admin/users")
 def admin_get_all_users(
     request: Request,
-    admin: User = Depends(require_admin_with_session),
-    db: Session = Depends(get_db)
+    admin: dict = Depends(require_admin_with_session),
+    db=Depends(get_db)
 ):
     """Получить список всех пользователей (только для админа)"""
-    users = db.query(User).order_by(User.created_at.desc()).all()
-    return [
-        {
-            "id": u.id,
-            "username": u.username,
-            "is_admin": u.is_admin,
-            "created_at": u.created_at.isoformat(),
-            "configs_count": len(u.saved_configs),
-        }
-        for u in users
-    ]
+    users = list(db.users.find().sort("created_at", -1))
+    result = []
+    for u in users:
+        configs_count = db.saved_configs.count_documents({"user_id": str(u["_id"])})
+        result.append({
+            "id": str(u["_id"]),
+            "username": u["username"],
+            "is_admin": u.get("is_admin", False),
+            "created_at": u["created_at"].isoformat(),
+            "configs_count": configs_count,
+        })
+    return result
 
 
 @app.get("/api/admin/users/{user_id}")
 def admin_get_user(
     request: Request,
-    user_id: int,
-    admin: User = Depends(require_admin_with_session),
-    db: Session = Depends(get_db)
+    user_id: str,
+    admin: dict = Depends(require_admin_with_session),
+    db=Depends(get_db)
 ):
     """Получить информацию о пользователе (только для админа)"""
-    user = db.query(User).filter(User.id == user_id).first()
+    try:
+        oid = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный ID пользователя")
+    
+    user = db.users.find_one({"_id": oid})
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     
+    configs = list(db.saved_configs.find({"user_id": str(user["_id"])}))
+    
     return {
-        "id": user.id,
-        "username": user.username,
-        "is_admin": user.is_admin,
-        "created_at": user.created_at.isoformat(),
+        "id": str(user["_id"]),
+        "username": user["username"],
+        "is_admin": user.get("is_admin", False),
+        "created_at": user["created_at"].isoformat(),
         "configs": [
             {
-                "id": c.id,
-                "name": c.name,
-                "created_at": c.created_at.isoformat(),
-                "updated_at": c.updated_at.isoformat(),
+                "id": str(c["_id"]),
+                "name": c["name"],
+                "created_at": c["created_at"].isoformat(),
+                "updated_at": c["updated_at"].isoformat(),
             }
-            for c in user.saved_configs
+            for c in configs
         ]
     }
 
@@ -1889,130 +1918,153 @@ def admin_get_user(
 @app.get("/api/admin/configs")
 def admin_get_all_configs(
     request: Request,
-    admin: User = Depends(require_admin_with_session),
-    db: Session = Depends(get_db)
+    admin: dict = Depends(require_admin_with_session),
+    db=Depends(get_db)
 ):
     """Получить все конфигурации всех пользователей (только для админа)"""
-    configs = db.query(SavedConfig).order_by(SavedConfig.updated_at.desc()).all()
-    return [
-        {
-            "id": c.id,
-            "name": c.name,
-            "user_id": c.user_id,
-            "username": c.owner.username,
-            "created_at": c.created_at.isoformat(),
-            "updated_at": c.updated_at.isoformat(),
-        }
-        for c in configs
-    ]
+    configs = list(db.saved_configs.find().sort("updated_at", -1))
+    result = []
+    for c in configs:
+        owner = db.users.find_one({"_id": ObjectId(c["user_id"])})
+        result.append({
+            "id": str(c["_id"]),
+            "name": c["name"],
+            "user_id": c["user_id"],
+            "username": owner["username"] if owner else "unknown",
+            "created_at": c["created_at"].isoformat(),
+            "updated_at": c["updated_at"].isoformat(),
+        })
+    return result
 
 
 @app.get("/api/admin/configs/{config_id}")
 def admin_get_config(
     request: Request,
-    config_id: int,
-    admin: User = Depends(require_admin_with_session),
-    db: Session = Depends(get_db)
+    config_id: str,
+    admin: dict = Depends(require_admin_with_session),
+    db=Depends(get_db)
 ):
     """Получить любую конфигурацию по ID (только для админа)"""
-    config = db.query(SavedConfig).filter(SavedConfig.id == config_id).first()
+    try:
+        oid = ObjectId(config_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный ID конфигурации")
+    
+    config = db.saved_configs.find_one({"_id": oid})
     if not config:
         raise HTTPException(status_code=404, detail="Конфигурация не найдена")
     
+    owner = db.users.find_one({"_id": ObjectId(config["user_id"])})
+    
     return {
-        "id": config.id,
-        "name": config.name,
-        "user_id": config.user_id,
-        "username": config.owner.username,
-        "config_data": json.loads(config.config_data),
-        "created_at": config.created_at.isoformat(),
-        "updated_at": config.updated_at.isoformat(),
+        "id": str(config["_id"]),
+        "name": config["name"],
+        "user_id": config["user_id"],
+        "username": owner["username"] if owner else "unknown",
+        "config_data": config["config_data"],
+        "created_at": config["created_at"].isoformat(),
+        "updated_at": config["updated_at"].isoformat(),
     }
 
 
 @app.delete("/api/admin/users/{user_id}")
 def admin_delete_user(
     request: Request,
-    user_id: int,
-    admin: User = Depends(require_admin_with_session),
-    db: Session = Depends(get_db)
+    user_id: str,
+    admin: dict = Depends(require_admin_with_session),
+    db=Depends(get_db)
 ):
     """Удалить пользователя (только для админа)"""
-    user = db.query(User).filter(User.id == user_id).first()
+    try:
+        oid = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный ID пользователя")
+    
+    user = db.users.find_one({"_id": oid})
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     
-    if user.id == admin.id:
+    if str(user["_id"]) == str(admin["_id"]):
         raise HTTPException(status_code=400, detail="Нельзя удалить самого себя")
     
-    if user.is_admin:
+    if user.get("is_admin", False):
         raise HTTPException(status_code=400, detail="Нельзя удалить другого администратора")
     
     try:
-        db.delete(user)
-        db.commit()
-        return {"success": True, "message": f"Пользователь {user.username} удалён"}
+        # Удаляем конфигурации пользователя
+        db.saved_configs.delete_many({"user_id": str(user["_id"])})
+        # Удаляем пользователя
+        db.users.delete_one({"_id": oid})
+        return {"success": True, "message": f"Пользователь {user['username']} удалён"}
     except Exception as e:
-        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.delete("/api/admin/configs/{config_id}")
 def admin_delete_config(
     request: Request,
-    config_id: int,
-    admin: User = Depends(require_admin_with_session),
-    db: Session = Depends(get_db)
+    config_id: str,
+    admin: dict = Depends(require_admin_with_session),
+    db=Depends(get_db)
 ):
     """Удалить любую конфигурацию (только для админа)"""
-    config = db.query(SavedConfig).filter(SavedConfig.id == config_id).first()
+    try:
+        oid = ObjectId(config_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный ID конфигурации")
+    
+    config = db.saved_configs.find_one({"_id": oid})
     if not config:
         raise HTTPException(status_code=404, detail="Конфигурация не найдена")
     
     try:
-        username = config.owner.username
-        config_name = config.name
-        db.delete(config)
-        db.commit()
+        owner = db.users.find_one({"_id": ObjectId(config["user_id"])})
+        username = owner["username"] if owner else "unknown"
+        config_name = config["name"]
+        db.saved_configs.delete_one({"_id": oid})
         return {"success": True, "message": f"Конфигурация '{config_name}' пользователя {username} удалена"}
     except Exception as e:
-        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.put("/api/admin/users/{user_id}/toggle-admin")
 def admin_toggle_admin(
     request: Request,
-    user_id: int,
-    admin: User = Depends(require_admin_with_session),
-    db: Session = Depends(get_db)
+    user_id: str,
+    admin: dict = Depends(require_admin_with_session),
+    db=Depends(get_db)
 ):
     """Переключить права администратора (только для админа)"""
-    user = db.query(User).filter(User.id == user_id).first()
+    try:
+        oid = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный ID пользователя")
+    
+    user = db.users.find_one({"_id": oid})
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     
-    if user.id == admin.id:
+    if str(user["_id"]) == str(admin["_id"]):
         raise HTTPException(status_code=400, detail="Нельзя изменить свои права")
     
-    user.is_admin = not user.is_admin
-    db.commit()
+    new_is_admin = not user.get("is_admin", False)
+    db.users.update_one({"_id": oid}, {"$set": {"is_admin": new_is_admin}})
     
     return {
         "success": True,
-        "message": f"Пользователь {user.username} {'получил' if user.is_admin else 'лишён'} прав администратора",
-        "is_admin": user.is_admin
+        "message": f"Пользователь {user['username']} {'получил' if new_is_admin else 'лишён'} прав администратора",
+        "is_admin": new_is_admin
     }
 
 
 @app.get("/api/me")
-def get_current_user_info(current_user: User = Depends(get_current_user)):
+def get_current_user_info_full(current_user: dict = Depends(get_current_user)):
     """Получить информацию о текущем пользователе"""
     return {
-        "id": current_user.id,
-        "username": current_user.username,
-        "is_admin": current_user.is_admin,
-        "created_at": current_user.created_at.isoformat(),
+        "id": str(current_user["_id"]),
+        "username": current_user["username"],
+        "is_admin": current_user.get("is_admin", False),
+        "created_at": current_user["created_at"].isoformat(),
     }
 
 
@@ -2025,15 +2077,15 @@ class ChangePasswordRequest(BaseModel):
 def change_password(
     request: Request,
     data: ChangePasswordRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_db)
 ):
     """Смена пароля пользователя"""
     client_ip = get_remote_address(request)
     
     # Проверяем текущий пароль
-    if not verify_password(data.current_password, current_user.hashed_password):
-        security_logger.warning(f"Password change failed (wrong current): user={current_user.username}, IP={client_ip}")
+    if not verify_password(data.current_password, current_user["hashed_password"]):
+        security_logger.warning(f"Password change failed (wrong current): user={current_user['username']}, IP={client_ip}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Неверный текущий пароль"
@@ -2054,9 +2106,11 @@ def change_password(
     
     # Хэшируем и сохраняем новый пароль
     new_hashed = bcrypt.hashpw(data.new_password.encode('utf-8'), bcrypt.gensalt())
-    current_user.hashed_password = new_hashed.decode('utf-8')
-    db.commit()
+    db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"hashed_password": new_hashed.decode('utf-8')}}
+    )
     
-    security_logger.info(f"Password changed: user={current_user.username}, IP={client_ip}")
+    security_logger.info(f"Password changed: user={current_user['username']}, IP={client_ip}")
     
     return {"success": True, "message": "Пароль успешно изменён"}

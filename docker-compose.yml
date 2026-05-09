@@ -1,0 +1,117 @@
+services:
+  gateway-service-go:
+    build:
+      context: .
+      dockerfile: Dockerfile.go-service
+      args:
+        SERVICE_CMD: cmd/gateway-service
+    ports:
+      - "80:8000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service-go:8000
+      - SIMULATION_SERVICE_URL=http://simulation-engine:8000
+      - CONFIG_SERVICE_URL=http://config-service-go:8000
+      - ADMIN_SERVICE_URL=http://admin-service-go:8000
+      - FRONTEND_URL=http://frontend:80
+    depends_on:
+      - frontend
+      - auth-service-go
+      - simulation-engine
+      - config-service-go
+      - admin-service-go
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    expose:
+      - "80"
+    restart: unless-stopped
+
+  auth-service-go:
+    build:
+      context: .
+      dockerfile: Dockerfile.go-service
+      args:
+        SERVICE_CMD: cmd/auth-service
+    expose:
+      - "8000"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
+      - WEATHER_CITY=${WEATHER_CITY:-Moscow}
+      - DEFAULT_ADMIN_USERNAME=${DEFAULT_ADMIN_USERNAME:-admin}
+      - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD:-admin123}
+    depends_on:
+      mongo:
+        condition: service_started
+    restart: unless-stopped
+
+  config-service-go:
+    build:
+      context: .
+      dockerfile: Dockerfile.go-service
+      args:
+        SERVICE_CMD: cmd/config-service
+    expose:
+      - "8000"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+    depends_on:
+      mongo:
+        condition: service_started
+    restart: unless-stopped
+
+  admin-service-go:
+    build:
+      context: .
+      dockerfile: Dockerfile.go-service
+      args:
+        SERVICE_CMD: cmd/admin-service
+    expose:
+      - "8000"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+    depends_on:
+      mongo:
+        condition: service_started
+    restart: unless-stopped
+
+  simulation-engine:
+    build:
+      context: .
+      dockerfile: python_simulation_engine/Dockerfile
+      args:
+        SERVICE_APP: python_simulation_engine.services.simulation_service.app
+    expose:
+      - "8000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  redis_data:
