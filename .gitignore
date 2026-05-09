@@ -57,3 +57,4 @@ docker-compose.legacy.yml
 Dockerfile.frontend.legacy
 Dockerfile.legacy
 nginx.legacy.conf
+.idea/
