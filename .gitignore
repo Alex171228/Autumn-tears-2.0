@@ -16,6 +16,8 @@ venv/
 dist/
 build/
 *.egg-info/
+.pytest_cache/
+article_docx_review/
 
 # IDE
 .vscode/
@@ -47,3 +49,11 @@ redis_data/
 # Static files (build output)
 static/
 
+
+# Legacy stack
+archive/
+legacy_monolith/
+docker-compose.legacy.yml
+Dockerfile.frontend.legacy
+Dockerfile.legacy
+nginx.legacy.conf
