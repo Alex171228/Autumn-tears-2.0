@@ -58,3 +58,20 @@ Dockerfile.frontend.legacy
 Dockerfile.legacy
 nginx.legacy.conf
 .idea/
+
+# Legacy stack
+archive/
+legacy_monolith/
+docker-compose.legacy.yml
+Dockerfile.frontend.legacy
+Dockerfile.legacy
+nginx.legacy.conf
+
+# Local generated files
+article_docx_review/
+.pytest_cache/
+__pycache__/
+node_modules/
+users.db
+.venv/
+venv/
