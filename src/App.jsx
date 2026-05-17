@@ -331,6 +331,8 @@ function App() {
           ...prev,
           ...result.state,
         }));
+        setCurrentConfigId(null);
+        setCurrentConfigName('');
         // Запоминаем имя загруженного файла
         setCurrentFileName(file.name);
         addLog(`Файл "${result.filename}" успешно загружен`, 'success');
@@ -400,6 +402,8 @@ function App() {
     localStorage.removeItem('username');
     localStorage.removeItem('is_admin');
     setUser(null);
+    setCurrentConfigId(null);
+    setCurrentConfigName('');
   };
 
   // Ref для input загрузки файла
@@ -588,4 +592,3 @@ function App() {
 }
 
 export default App;
-

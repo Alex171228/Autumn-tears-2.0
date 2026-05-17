@@ -38,7 +38,8 @@ services:
     expose:
       - "8000"
     environment:
-      - MONGO_URL=mongodb://mongo:27017
+      - MONGO_URL=mongodb://${MONGO_APP_USERNAME}:${MONGO_APP_PASSWORD}@mongo:27017/${MONGO_DB_NAME:-webapp_robot}?authSource=${MONGO_DB_NAME:-webapp_robot}
+      - MONGO_DB_NAME=${MONGO_DB_NAME:-webapp_robot}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
       - WEATHER_CITY=${WEATHER_CITY:-Moscow}
@@ -58,7 +59,8 @@ services:
     expose:
       - "8000"
     environment:
-      - MONGO_URL=mongodb://mongo:27017
+      - MONGO_URL=mongodb://${MONGO_APP_USERNAME}:${MONGO_APP_PASSWORD}@mongo:27017/${MONGO_DB_NAME:-webapp_robot}?authSource=${MONGO_DB_NAME:-webapp_robot}
+      - MONGO_DB_NAME=${MONGO_DB_NAME:-webapp_robot}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
     depends_on:
       mongo:
@@ -74,7 +76,8 @@ services:
     expose:
       - "8000"
     environment:
-      - MONGO_URL=mongodb://mongo:27017
+      - MONGO_URL=mongodb://${MONGO_APP_USERNAME}:${MONGO_APP_PASSWORD}@mongo:27017/${MONGO_DB_NAME:-webapp_robot}?authSource=${MONGO_DB_NAME:-webapp_robot}
+      - MONGO_DB_NAME=${MONGO_DB_NAME:-webapp_robot}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
     depends_on:
       mongo:
@@ -98,16 +101,20 @@ services:
 
   mongo:
     image: mongo:7
-    ports:
-      - "27019:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DB_NAME:-webapp_robot}
+      - MONGO_APP_USERNAME=${MONGO_APP_USERNAME}
+      - MONGO_APP_PASSWORD=${MONGO_APP_PASSWORD}
+      - MONGO_DB_NAME=${MONGO_DB_NAME:-webapp_robot}
     volumes:
       - mongo_go_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6381:6379"
     volumes:
       - redis_go_data:/data
     restart: unless-stopped

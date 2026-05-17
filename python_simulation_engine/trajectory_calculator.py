@@ -634,54 +634,51 @@ class TrajectoryCalculator:
     def quality_of_regulation(self, q: List[float], t: List[float], 
                               trajectory_q: List[float], output_time_array: List[float]) -> Tuple[List[float], List[float]]:
         """Оценка качества регулирования"""
-        j = 0
-        dist_prev = 3600
+        if not q or not t or not trajectory_q or not output_time_array:
+            return [], []
+
+        sample_count = min(len(output_time_array), len(trajectory_q))
+        if sample_count == 0:
+            return [], []
+
+        output_times = output_time_array[:sample_count]
+        trajectory = trajectory_q[:sample_count]
+        points_count = min(len(q), len(t))
+
         real_time_array = []
-        erorr_stable_array = []
+        for target_time in t[:points_count]:
+            nearest_index = min(
+                range(sample_count),
+                key=lambda index: abs(output_times[index] - target_time),
+            )
+            real_time_array.append(nearest_index)
+
+        error_stable_array = [
+            abs(q[index] - trajectory[real_index])
+            for index, real_index in enumerate(real_time_array)
+        ]
+
         regulation_time_array = []
-        
-        for i in range(len(output_time_array)):
-            dist = abs(output_time_array[i] - t[j])
-            if dist < dist_prev:
-                dist_prev = dist
-            else:
-                dist_prev = 3600
-                real_time_array.append(i - 1)
-                j += 1
-            if j == len(t) - 1 and i == len(output_time_array) - 1:
-                real_time_array.append(i)
-        
-        for i in range(len(real_time_array)):
-            if i < len(q) and real_time_array[i] < len(trajectory_q):
-                erorr_stable_array.append(abs(q[i] - trajectory_q[real_time_array[i]]))
-        
-        flag_point_notfound = True
-        point_number = 0
-        t_now = 0
-        
-        for i in range(len(output_time_array)):
-            if point_number < len(t) and output_time_array[i] >= t[point_number]:
-                point_number += 1
-                flag_point_notfound = True
-                t_now = output_time_array[i]
-            
-            if (flag_point_notfound and point_number < len(real_time_array) and 
-                real_time_array[point_number] < len(trajectory_q) and
-                abs(trajectory_q[i] - trajectory_q[real_time_array[point_number]]) <= 
-                0.05 * abs(trajectory_q[real_time_array[point_number]]) if trajectory_q[real_time_array[point_number]] != 0 else True):
-                t_reg = output_time_array[i] - t_now
-                regulation_time_array.append(t_reg)
-                flag_point_notfound = False
-            
-            if (not flag_point_notfound and point_number < len(real_time_array) and 
-                real_time_array[point_number] < len(trajectory_q) and
-                abs(trajectory_q[i] - trajectory_q[real_time_array[point_number]]) > 
-                0.05 * abs(trajectory_q[real_time_array[point_number]]) if trajectory_q[real_time_array[point_number]] != 0 else False):
-                flag_point_notfound = True
-                if regulation_time_array:
-                    del regulation_time_array[-1]
-        
-        return erorr_stable_array, regulation_time_array
+        for point_number, real_index in enumerate(real_time_array):
+            target_time = t[point_number]
+            target_value = trajectory[real_index]
+            threshold = 0.05 * abs(target_value)
+
+            for sample_index, current_time in enumerate(output_times):
+                if current_time < target_time:
+                    continue
+
+                current_value = trajectory[sample_index]
+                stable = (
+                    abs(current_value - target_value) <= threshold
+                    if target_value != 0
+                    else current_value == 0
+                )
+                if stable:
+                    regulation_time_array.append(current_time - target_time)
+                    break
+
+        return error_stable_array, regulation_time_array
     
     def calculate_trajectory(self) -> Dict[str, Any]:
         """Основной метод расчёта траектории"""
@@ -1247,4 +1244,3 @@ class WorkspaceCalculator:
         plt.axhline(y=0, color='steelblue', lw=1)
         plt.axvline(x=0, color='steelblue', lw=1)
         plt.grid(True, color='lightskyblue')
-
