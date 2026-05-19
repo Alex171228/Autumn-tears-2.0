@@ -369,6 +369,12 @@ docker compose logs -f
 После запуска приложение доступно по адресу:
 - `http://localhost`
 
+Документация API в Swagger UI доступна по адресу:
+- `http://localhost:8080`
+
+Спецификация OpenAPI находится в файле:
+- [docs/openapi.yaml](docs/openapi.yaml)
+
 Переменные окружения основного стека:
 - `SECRET_KEY`;
 - `OPENWEATHER_API_KEY`;

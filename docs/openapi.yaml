@@ -1,0 +1,1012 @@
+openapi: 3.0.3
+info:
+  title: Autumn Tears Robot Trajectory API
+  version: 1.0.0
+  description: Unified API contract for the web application gateway.
+servers:
+  - url: http://localhost
+    description: Local Docker Compose gateway
+tags:
+  - name: Auth
+    description: User registration, login and profile operations
+  - name: Weather
+    description: Weather data for the interface widget
+  - name: Config files
+    description: Import and export of robot configuration files
+  - name: Saved configs
+    description: User configuration storage
+  - name: Robot
+    description: Robot setup, trajectory calculation and visualization data
+  - name: Admin
+    description: Administrative user and configuration management
+paths:
+  /healthz:
+    get:
+      tags: [System]
+      summary: Check gateway health
+      responses:
+        "200":
+          description: Service status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /api/register:
+    post:
+      tags: [Auth]
+      summary: Register a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Credentials"
+      responses:
+        "200":
+          description: Registration result with access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Credentials"
+      responses:
+        "200":
+          description: Login result with access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/me:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/change-password:
+    post:
+      tags: [Auth]
+      summary: Change user password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Password update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/weather:
+    get:
+      tags: [Weather]
+      summary: Get current weather
+      parameters:
+        - name: city
+          in: query
+          required: false
+          schema:
+            type: string
+            example: Moscow
+      responses:
+        "200":
+          description: Weather response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeatherResponse"
+  /api/data/upload:
+    post:
+      tags: [Config files]
+      summary: Upload a robot configuration file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Parsed configuration state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadConfigResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/data/download:
+    post:
+      tags: [Config files]
+      summary: Download a generated robot configuration file
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Windows-1251 text configuration file
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/configs:
+    get:
+      tags: [Saved configs]
+      summary: Get saved configurations of current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Saved configuration list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedConfigListItem"
+        "401":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Saved configs]
+      summary: Save current robot configuration
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveConfigRequest"
+      responses:
+        "200":
+          description: Saved configuration metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaveConfigResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/configs/{configID}:
+    parameters:
+      - $ref: "#/components/parameters/ConfigID"
+    get:
+      tags: [Saved configs]
+      summary: Get a saved configuration
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Saved configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedConfig"
+        "404":
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Saved configs]
+      summary: Update a saved configuration
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveConfigRequest"
+      responses:
+        "200":
+          description: Update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaveConfigResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Saved configs]
+      summary: Delete a saved configuration
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Delete result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/robot/configure:
+    post:
+      tags: [Robot]
+      summary: Apply a full robot configuration
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FullRobotConfig"
+      responses:
+        "200":
+          description: Configuration result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/robot/type:
+    post:
+      tags: [Robot]
+      summary: Set robot type
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+        - name: robot_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [Декартовый, Скара, Цилиндрический, Колер]
+          description: Robot type value accepted by the simulation service.
+      responses:
+        "200":
+          description: Update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /api/robot/cyclogram:
+    post:
+      tags: [Robot]
+      summary: Set cyclogram points
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CyclogramRequest"
+      responses:
+        "200":
+          description: Update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /api/robot/pid:
+    post:
+      tags: [Robot]
+      summary: Set PID coefficients
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PIDRequest"
+      responses:
+        "200":
+          description: Update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /api/robot/motors:
+    post:
+      tags: [Robot]
+      summary: Set motor parameters
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MotorParamsRequest"
+      responses:
+        "200":
+          description: Update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /api/robot/contour/line:
+    post:
+      tags: [Robot]
+      summary: Set a linear contour
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LineContourRequest"
+      responses:
+        "200":
+          description: Update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /api/robot/contour/circle:
+    post:
+      tags: [Robot]
+      summary: Set a circular contour
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CircleContourRequest"
+      responses:
+        "200":
+          description: Update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /api/robot/spline:
+    post:
+      tags: [Robot]
+      summary: Enable or disable spline interpolation
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SplineRequest"
+      responses:
+        "200":
+          description: Update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /api/robot/state:
+    get:
+      tags: [Robot]
+      summary: Get current robot state summary
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      responses:
+        "200":
+          description: Robot state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RobotStateResponse"
+  /api/robot/calculate:
+    post:
+      tags: [Robot]
+      summary: Calculate robot trajectory
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      responses:
+        "200":
+          description: Calculation summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculationResponse"
+  /api/robot/plot/{plot_type}:
+    get:
+      tags: [Robot]
+      summary: Get plot image as base64
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+        - name: plot_type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - obobshennie_coordinates
+              - decart_plane
+              - decart_coordinates
+              - speed
+              - acceleration
+              - voltage
+              - voltage_star
+              - current
+              - motor_moment
+              - load_moment
+              - moment_star
+      responses:
+        "200":
+          description: Plot image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlotResponse"
+  /api/robot/workspace:
+    get:
+      tags: [Robot]
+      summary: Get robot workspace image as base64
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      responses:
+        "200":
+          description: Workspace image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceResponse"
+  /api/robot/spline-cyclegram:
+    get:
+      tags: [Robot]
+      summary: Get spline cyclogram data
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      responses:
+        "200":
+          description: Spline cyclogram points
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /api/robot/data/all:
+    get:
+      tags: [Robot]
+      summary: Get all calculated trajectory data
+      parameters:
+        - $ref: "#/components/parameters/SessionID"
+      responses:
+        "200":
+          description: Full calculation dataset
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /api/robot/session/{session_id}:
+    delete:
+      tags: [Robot]
+      summary: Delete a calculation session
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: default
+      responses:
+        "200":
+          description: Delete result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: Get all users
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/admin/users/{userID}:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
+    get:
+      tags: [Admin]
+      summary: Get user details
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetails"
+    delete:
+      tags: [Admin]
+      summary: Delete a user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Delete result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /api/admin/users/{userID}/toggle-admin:
+    put:
+      tags: [Admin]
+      summary: Toggle admin rights
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserID"
+      responses:
+        "200":
+          description: Update result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  is_admin:
+                    type: boolean
+  /api/admin/configs:
+    get:
+      tags: [Admin]
+      summary: Get all saved configurations
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Configuration list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminConfigListItem"
+  /api/admin/configs/{configID}:
+    parameters:
+      - $ref: "#/components/parameters/ConfigID"
+    get:
+      tags: [Admin]
+      summary: Get any saved configuration
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Saved configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminConfig"
+    delete:
+      tags: [Admin]
+      summary: Delete any saved configuration
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Delete result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    SessionID:
+      name: session_id
+      in: query
+      required: false
+      schema:
+        type: string
+        default: default
+    ConfigID:
+      name: configID
+      in: path
+      required: true
+      schema:
+        type: string
+        example: 6648a18ceef1b75b80000000
+    UserID:
+      name: userID
+      in: path
+      required: true
+      schema:
+        type: string
+        example: 6648a18ceef1b75b80000000
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+        time:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+    Credentials:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: user1
+        password:
+          type: string
+          format: password
+          example: password123
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: bearer
+        username:
+          type: string
+        is_admin:
+          type: boolean
+    UserProfile:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          nullable: true
+        is_admin:
+          type: boolean
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, new_password]
+      properties:
+        current_password:
+          type: string
+          format: password
+        new_password:
+          type: string
+          format: password
+    WeatherResponse:
+      type: object
+      properties:
+        city:
+          type: string
+        temp_c:
+          type: number
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        icon_url:
+          type: string
+          nullable: true
+    UploadConfigResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        filename:
+          type: string
+        state:
+          type: object
+          additionalProperties: true
+    SaveConfigRequest:
+      type: object
+      required: [name, config_data]
+      properties:
+        name:
+          type: string
+          example: Test configuration
+        config_data:
+          type: object
+          additionalProperties: true
+    SaveConfigResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+    SavedConfigListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SavedConfig:
+      allOf:
+        - $ref: "#/components/schemas/SavedConfigListItem"
+        - type: object
+          properties:
+            config_data:
+              type: object
+              additionalProperties: true
+    NumberArray:
+      type: array
+      items:
+        type: number
+      example: [0, 1, 2]
+    FullRobotConfig:
+      type: object
+      description: Robot configuration accepted by the simulation service.
+      additionalProperties:
+        oneOf:
+          - type: string
+          - type: number
+          - type: boolean
+          - $ref: "#/components/schemas/NumberArray"
+      properties:
+        robot_type:
+          type: string
+          example: Декартовый
+        type_of_control:
+          type: string
+          example: Позиционное
+        spline:
+          type: boolean
+        Kp:
+          $ref: "#/components/schemas/NumberArray"
+        Ki:
+          $ref: "#/components/schemas/NumberArray"
+        Kd:
+          $ref: "#/components/schemas/NumberArray"
+        t:
+          $ref: "#/components/schemas/NumberArray"
+        q1:
+          $ref: "#/components/schemas/NumberArray"
+        q2:
+          $ref: "#/components/schemas/NumberArray"
+    CyclogramRequest:
+      type: object
+      required: [t, q1, q2, type_of_control]
+      properties:
+        t:
+          $ref: "#/components/schemas/NumberArray"
+        q1:
+          $ref: "#/components/schemas/NumberArray"
+        q2:
+          $ref: "#/components/schemas/NumberArray"
+        q3:
+          $ref: "#/components/schemas/NumberArray"
+        q4:
+          $ref: "#/components/schemas/NumberArray"
+        type_of_control:
+          type: string
+          example: Позиционное
+    PIDRequest:
+      type: object
+      required: [Kp, Ki, Kd]
+      properties:
+        Kp:
+          $ref: "#/components/schemas/NumberArray"
+        Ki:
+          $ref: "#/components/schemas/NumberArray"
+        Kd:
+          $ref: "#/components/schemas/NumberArray"
+    MotorParamsRequest:
+      type: object
+      required: [J, T_e, Umax, Fi, Ce, Ra, Cm]
+      properties:
+        J:
+          $ref: "#/components/schemas/NumberArray"
+        T_e:
+          $ref: "#/components/schemas/NumberArray"
+        Umax:
+          $ref: "#/components/schemas/NumberArray"
+        Fi:
+          $ref: "#/components/schemas/NumberArray"
+        Ce:
+          $ref: "#/components/schemas/NumberArray"
+        Ra:
+          $ref: "#/components/schemas/NumberArray"
+        Cm:
+          $ref: "#/components/schemas/NumberArray"
+    LineContourRequest:
+      type: object
+      required: [x1, x2, y1, y2]
+      properties:
+        x1:
+          type: number
+        x2:
+          type: number
+        y1:
+          type: number
+        y2:
+          type: number
+        speed:
+          type: number
+          default: 1
+    CircleContourRequest:
+      type: object
+      required: [x, y, radius]
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+        radius:
+          type: number
+        speed:
+          type: number
+          default: 1
+    SplineRequest:
+      type: object
+      required: [enabled, num_dots]
+      properties:
+        enabled:
+          type: boolean
+        num_dots:
+          type: integer
+          example: 100
+    RobotStateResponse:
+      type: object
+      properties:
+        robot_type:
+          type: string
+        type_of_control:
+          type: string
+        spline:
+          type: boolean
+        has_cyclogram:
+          type: boolean
+        cyclogram_points:
+          type: integer
+        pid_configured:
+          type: boolean
+        motors_configured:
+          type: boolean
+    CalculationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        robot_type:
+          type: string
+        type_of_control:
+          type: string
+        spline:
+          type: boolean
+        trajectory_length:
+          type: integer
+        quality_link_1:
+          type: object
+          additionalProperties: true
+        quality_link_2:
+          type: object
+          additionalProperties: true
+    PlotResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        plot_type:
+          type: string
+        image_base64:
+          type: string
+    WorkspaceResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        robot_type:
+          type: string
+        image_base64:
+          type: string
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        is_admin:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        configs_count:
+          type: integer
+    AdminUserDetails:
+      allOf:
+        - $ref: "#/components/schemas/AdminUser"
+        - type: object
+          properties:
+            configs:
+              type: array
+              items:
+                $ref: "#/components/schemas/SavedConfigListItem"
+    AdminConfigListItem:
+      allOf:
+        - $ref: "#/components/schemas/SavedConfigListItem"
+        - type: object
+          properties:
+            user_id:
+              type: string
+            username:
+              type: string
+    AdminConfig:
+      allOf:
+        - $ref: "#/components/schemas/AdminConfigListItem"
+        - type: object
+          properties:
+            config_data:
+              type: object
+              additionalProperties: true
